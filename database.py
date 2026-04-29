@@ -38,10 +38,13 @@ def inserer_eleve(prenom, email, password_hash):
         return False
 
 def get_eleve_par_email(email, password_hash):
-    # Sécurité : ne pas requêter si les valeurs sont vides
     if not email or not password_hash:
         return None
     try:
+        # Debug : affiche le nom exact de la table vue par Supabase
+        tables = get_client().table("eleves").select("*").limit(1).execute()
+        st.write("Connexion OK, données :", tables.data)
+        
         res = get_client().table("eleves").select("id, prenom").eq(
             "email", email
         ).eq("mot_de_passe", password_hash).execute()
@@ -50,6 +53,7 @@ def get_eleve_par_email(email, password_hash):
         return None
     except Exception as e:
         st.error(f"Erreur base de données : {e}")
+        st.write("URL utilisée :", st.secrets["SUPABASE_URL"])
         return None
 
 # ── Résultats ─────────────────────────────────────────────────────
