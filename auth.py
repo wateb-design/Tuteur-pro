@@ -27,9 +27,11 @@ def creer_compte(prenom, email, password):
 # un élève avec cet email ET ce hash. Si on trouve → connecté.
 # On retourne un dict avec id et prenom pour la session.
 def connecter(email, password):
+    # On ne fait la requête que si les champs sont remplis
+    if not email or not password:
+        return False, None
     row = get_eleve_par_email(email, hash_password(password))
     if row:
-        # row = (id, prenom) — voir database.py
         return True, {"id": row[0], "prenom": row[1]}
     return False, None
 
