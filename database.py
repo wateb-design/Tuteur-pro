@@ -6,10 +6,14 @@ from supabase import create_client
 # Il utilise l'API REST — pas de driver PostgreSQL nécessaire.
 @st.cache_resource
 def get_client():
-    return create_client(
+    from supabase import create_client
+    client = create_client(
         st.secrets["SUPABASE_URL"],
         st.secrets["SUPABASE_KEY"]
     )
+    # Force le schéma public explicitement
+    client.postgrest.schema("public")
+    return client
 
 # ── Initialisation ────────────────────────────────────────────────
 # Les tables sont créées directement dans Supabase SQL Editor.
