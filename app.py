@@ -1,7 +1,7 @@
 import streamlit as st
 from database import init_db
 from auth import page_auth, deconnecter
-from exercices import page_exercices
+from Exercices import page_exercices
 from cours import page_cours
 from progression import page_progression
 
