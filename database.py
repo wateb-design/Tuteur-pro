@@ -25,19 +25,18 @@ def init_db():
 def inserer_eleve(prenom, email, password_hash):
     try:
         get_client().table("eleves").insert({
-            "prenom":   prenom,
-            "email":    email,
-            "password": password_hash
+            "prenom":        prenom,
+            "email":         email,
+            "mot_de_passe":  password_hash   # ← changé
         }).execute()
         return True
     except Exception:
-        # Email déjà utilisé → violation contrainte UNIQUE
         return False
 
 def get_eleve_par_email(email, password_hash):
     res = get_client().table("eleves").select("id, prenom").eq(
         "email", email
-    ).eq("password", password_hash).execute()
+    ).eq("mot_de_passe", password_hash).execute()  # ← changé
     if res.data:
         return res.data[0]["id"], res.data[0]["prenom"]
     return None
