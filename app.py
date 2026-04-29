@@ -169,10 +169,4 @@ elif page == "📊 Ma progression":
             st.info("Aucun résultat encore. Lance-toi sur les exercices !")
 ```
 
-**Étapes :**
 
-1. Sur GitHub, cliquez sur `app.py` → l'icône ✏️ (Edit)
-2. Sélectionnez tout le contenu existant et remplacez-le par ce code
-3. "Commit changes"
-
-Streamlit redéploie en ~30 secondes. Votre app aura déjà 4 pages fonctionnelles : accueil, cours, exercices avec correction IA, et suivi de progression. Dites-moi quand c'est en ligne !
