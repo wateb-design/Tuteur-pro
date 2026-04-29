@@ -1,4 +1,4 @@
-Parfait, les secrets sont configurés ! Maintenant on attaque le vrai code. Commençons par un `app.py` solide qui servira de base à toute l'application.
+Parfait, les secrets sont configurés ! Maintenant on attaque le vrai code. Commençons par un `app.py` solide qui servira de base à toute l application.
 
 Voici le contenu complet à coller dans votre `app.py` sur GitHub :
 
