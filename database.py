@@ -1,38 +1,38 @@
-import sqlite3
+import psycopg2
+import streamlit as st
 
-DB_PATH = "tuteur.db"
-
+# ── Connexion à Supabase via PostgreSQL ───────────────────────────
+# On récupère l'URL depuis les secrets Streamlit.
+# psycopg2 est le driver Python standard pour PostgreSQL.
 def get_connection():
-    return sqlite3.connect(DB_PATH)
+    return psycopg2.connect(st.secrets["SUPABASE_URL"])
 
-# ── Initialisation ────────────────────────────────────────────────
-# CREATE TABLE IF NOT EXISTS est sans danger — ne recrée pas
-# si la table existe déjà. Appelé au démarrage ET dans chaque
-# fonction pour garantir que les tables existent toujours.
+# ── Initialisation des tables ─────────────────────────────────────
+# Appelé au démarrage de l'app dans app.py.
+# IF NOT EXISTS → sans danger si les tables existent déjà.
 def init_db():
     conn = get_connection()
     c = conn.cursor()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS eleves (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            id        SERIAL PRIMARY KEY,
             prenom    TEXT NOT NULL,
             email     TEXT UNIQUE NOT NULL,
             password  TEXT NOT NULL,
-            date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            date      TIMESTAMP DEFAULT NOW()
         )
     """)
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS resultats (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            eleve_id  INTEGER NOT NULL,
+            id        SERIAL PRIMARY KEY,
+            eleve_id  INTEGER REFERENCES eleves(id),
             theme     TEXT,
             niveau    TEXT,
             reussi    INTEGER,
             temps     INTEGER,
-            date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (eleve_id) REFERENCES eleves(id)
+            date      TIMESTAMP DEFAULT NOW()
         )
     """)
 
@@ -42,59 +42,63 @@ def init_db():
 # ── Élèves ────────────────────────────────────────────────────────
 
 def inserer_eleve(prenom, email, password_hash):
-    init_db()
     conn = get_connection()
     try:
-        conn.execute(
-            "INSERT INTO eleves (prenom, email, password) VALUES (?, ?, ?)",
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO eleves (prenom, email, password) VALUES (%s, %s, %s)",
             (prenom, email, password_hash)
         )
         conn.commit()
         return True
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
+        # Email déjà utilisé → UNIQUE constraint
         return False
     finally:
         conn.close()
 
 def get_eleve_par_email(email, password_hash):
-    init_db()
     conn = get_connection()
-    row = conn.execute(
-        "SELECT id, prenom FROM eleves WHERE email=? AND password=?",
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, prenom FROM eleves WHERE email=%s AND password=%s",
         (email, password_hash)
-    ).fetchone()
+    )
+    row = c.fetchone()
     conn.close()
     return row
 
 # ── Résultats ─────────────────────────────────────────────────────
 
 def inserer_resultat(eleve_id, theme, niveau, reussi, temps=0):
-    init_db()
     conn = get_connection()
-    conn.execute(
-        "INSERT INTO resultats (eleve_id, theme, niveau, reussi, temps) VALUES (?,?,?,?,?)",
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO resultats (eleve_id, theme, niveau, reussi, temps) VALUES (%s,%s,%s,%s,%s)",
         (eleve_id, theme, niveau, reussi, temps)
     )
     conn.commit()
     conn.close()
 
 def get_resultats_eleve(eleve_id):
-    init_db()
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT theme, niveau, reussi, temps, date FROM resultats WHERE eleve_id=? ORDER BY date DESC",
+    c = conn.cursor()
+    c.execute(
+        "SELECT theme, niveau, reussi, temps, date FROM resultats WHERE eleve_id=%s ORDER BY date DESC",
         (eleve_id,)
-    ).fetchall()
+    )
+    rows = c.fetchall()
     conn.close()
     return rows
 
 def get_stats_eleve(eleve_id):
-    init_db()
     conn = get_connection()
-    row = conn.execute(
-        "SELECT COUNT(*), SUM(reussi) FROM resultats WHERE eleve_id=?",
+    c = conn.cursor()
+    c.execute(
+        "SELECT COUNT(*), SUM(reussi) FROM resultats WHERE eleve_id=%s",
         (eleve_id,)
-    ).fetchone()
+    )
+    row = c.fetchone()
     conn.close()
     total   = row[0] or 0
     reussis = row[1] or 0
@@ -102,16 +106,17 @@ def get_stats_eleve(eleve_id):
     return {"total": total, "reussis": reussis, "taux": taux}
 
 def get_stats_par_theme(eleve_id):
-    init_db()
     conn = get_connection()
-    rows = conn.execute(
+    c = conn.cursor()
+    c.execute(
         """SELECT theme,
                   COUNT(*) as total,
                   SUM(reussi) as reussis
            FROM resultats
-           WHERE eleve_id=?
+           WHERE eleve_id=%s
            GROUP BY theme""",
         (eleve_id,)
-    ).fetchall()
+    )
+    rows = c.fetchall()
     conn.close()
     return rows
