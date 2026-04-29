@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 from groq import Groq
 import sqlite3
@@ -163,6 +162,5 @@ elif page == "📊 Ma progression":
             st.dataframe(df, use_container_width=True)
         else:
             st.info("Aucun résultat encore. Lance-toi sur les exercices !")
-```
 
 
