@@ -34,12 +34,19 @@ def inserer_eleve(prenom, email, password_hash):
         return False
 
 def get_eleve_par_email(email, password_hash):
-    res = get_client().table("eleves").select("id, prenom").eq(
-        "email", email
-    ).eq("mot_de_passe", password_hash).execute()  # ← changé
-    if res.data:
-        return res.data[0]["id"], res.data[0]["prenom"]
-    return None
+    # Sécurité : ne pas requêter si les valeurs sont vides
+    if not email or not password_hash:
+        return None
+    try:
+        res = get_client().table("eleves").select("id, prenom").eq(
+            "email", email
+        ).eq("mot_de_passe", password_hash).execute()
+        if res.data:
+            return res.data[0]["id"], res.data[0]["prenom"]
+        return None
+    except Exception as e:
+        st.error(f"Erreur base de données : {e}")
+        return None
 
 # ── Résultats ─────────────────────────────────────────────────────
 
