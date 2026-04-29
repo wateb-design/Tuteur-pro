@@ -115,7 +115,3 @@ def page_auth():
                         st.success(msg2 + " Tu peux maintenant te connecter.")
                     else:
                         st.error(msg2)
-
-Deux choses notables par rapport à la version précédente : la fonction `valider_inscription()` est séparée — ça évite de mélanger la logique métier et l'affichage — et le formulaire est centré sur la page grâce aux colonnes Streamlit, ce qui donne un rendu plus propre.
-
-Dites-moi quand c'est commité et on passe à `exercices.py` !
