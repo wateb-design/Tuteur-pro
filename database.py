@@ -5,6 +5,10 @@ DB_PATH = "tuteur.db"
 def get_connection():
     return sqlite3.connect(DB_PATH)
 
+# ── Initialisation ────────────────────────────────────────────────
+# CREATE TABLE IF NOT EXISTS est sans danger — ne recrée pas
+# si la table existe déjà. Appelé au démarrage ET dans chaque
+# fonction pour garantir que les tables existent toujours.
 def init_db():
     conn = get_connection()
     c = conn.cursor()
@@ -38,6 +42,7 @@ def init_db():
 # ── Élèves ────────────────────────────────────────────────────────
 
 def inserer_eleve(prenom, email, password_hash):
+    init_db()
     conn = get_connection()
     try:
         conn.execute(
@@ -52,6 +57,7 @@ def inserer_eleve(prenom, email, password_hash):
         conn.close()
 
 def get_eleve_par_email(email, password_hash):
+    init_db()
     conn = get_connection()
     row = conn.execute(
         "SELECT id, prenom FROM eleves WHERE email=? AND password=?",
@@ -63,6 +69,7 @@ def get_eleve_par_email(email, password_hash):
 # ── Résultats ─────────────────────────────────────────────────────
 
 def inserer_resultat(eleve_id, theme, niveau, reussi, temps=0):
+    init_db()
     conn = get_connection()
     conn.execute(
         "INSERT INTO resultats (eleve_id, theme, niveau, reussi, temps) VALUES (?,?,?,?,?)",
@@ -72,6 +79,7 @@ def inserer_resultat(eleve_id, theme, niveau, reussi, temps=0):
     conn.close()
 
 def get_resultats_eleve(eleve_id):
+    init_db()
     conn = get_connection()
     rows = conn.execute(
         "SELECT theme, niveau, reussi, temps, date FROM resultats WHERE eleve_id=? ORDER BY date DESC",
@@ -81,18 +89,20 @@ def get_resultats_eleve(eleve_id):
     return rows
 
 def get_stats_eleve(eleve_id):
+    init_db()
     conn = get_connection()
     row = conn.execute(
         "SELECT COUNT(*), SUM(reussi) FROM resultats WHERE eleve_id=?",
         (eleve_id,)
     ).fetchone()
     conn.close()
-    total = row[0] or 0
+    total   = row[0] or 0
     reussis = row[1] or 0
-    taux = round(reussis / total * 100) if total > 0 else 0
+    taux    = round(reussis / total * 100) if total > 0 else 0
     return {"total": total, "reussis": reussis, "taux": taux}
 
 def get_stats_par_theme(eleve_id):
+    init_db()
     conn = get_connection()
     rows = conn.execute(
         """SELECT theme,
