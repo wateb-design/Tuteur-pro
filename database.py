@@ -5,7 +5,10 @@ import streamlit as st
 # On récupère l'URL depuis les secrets Streamlit.
 # psycopg2 est le driver Python standard pour PostgreSQL.
 def get_connection():
-    return psycopg2.connect(st.secrets["SUPABASE_URL"])
+    return psycopg2.connect(
+        st.secrets["SUPABASE_URL"],
+        sslmode="require"
+    )
 
 # ── Initialisation des tables ─────────────────────────────────────
 # Appelé au démarrage de l'app dans app.py.
