@@ -16,7 +16,7 @@ def inject_css():
 
     /* ── Sidebar ─────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background: #267BF1 !important;
+        background: #2194c2 !important;
         border-right: 1px solid #2A4A7F !important;
     }
     [data-testid="stSidebar"] * {
