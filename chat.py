@@ -86,7 +86,7 @@ def envoyer_message(historique, message_eleve):
 
 # ── Page principale du chat ───────────────────────────────────────
 def page_chat():
-    st.title("💬 Tuteur pro")
+    st.title("💬 Assistant IA")
     st.caption("Pose tes questions sur l'algorithmique, le C, HTML/CSS et JavaScript.")
 
     eleve = st.session_state["eleve"]
@@ -100,7 +100,7 @@ def page_chat():
         # Message de bienvenue personnalisé
         st.session_state["chat_historique"].append({
             "role":    "assistant",
-            "content": f"Bonjour {eleve['prenom']} ! 👋 Je suis ton tuteur IA. "
+            "content": f"Bonjour {eleve['prenom']} ! 👋 Je suis ton Tuteur-pro. "
                        f"Je peux t'aider sur l'**algorithmique**, le **langage C**, "
                        f"**HTML/CSS** et **JavaScript**. Quelle est ta question ?"
         })
