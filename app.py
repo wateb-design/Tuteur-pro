@@ -5,11 +5,17 @@ from Exercices import page_exercices
 from cours import page_cours
 from progression import page_progression
 from chat import page_chat
+# Ajoutez cet import avec les autres :
+from style import inject_css
+
+# Ajoutez cette ligne juste après st.set_page_config() :
+inject_css()
 
 # ── Configuration de la page ──────────────────────────────────────
 # Doit être le PREMIER appel Streamlit — avant tout autre st.*
 # layout="wide" utilise toute la largeur de l'écran.
 st.set_page_config(
+    inject_css()
     page_title="Tuteur IA — Programmation",
     page_icon="🤖",
     layout="wide"
