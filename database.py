@@ -275,3 +275,39 @@ def get_stats_cours(eleve_id):
         "chapitres_vus":  len(data),
         "quiz_reussis":   sum(1 for d in data if d["quiz_reussi"])
     }
+
+def get_onboarding(eleve_id):
+    """Vérifie si l'élève a déjà fait l'onboarding."""
+    res = requests.get(
+        f"{supabase_url()}/rest/v1/onboarding",
+        headers=headers(),
+        params={"eleve_id": f"eq.{eleve_id}"}
+    )
+    data = res.json()
+    return data[0] if data else None
+
+def sauvegarder_onboarding(eleve_id, scores, recommandation):
+    """Sauvegarde les résultats du diagnostic initial."""
+    onboarding = get_onboarding(eleve_id)
+    if onboarding:
+        requests.patch(
+            f"{supabase_url()}/rest/v1/onboarding",
+            headers=headers(),
+            params={"eleve_id": f"eq.{eleve_id}"},
+            json={
+                "onboarding_fait": True,
+                "scores":          scores,
+                "recommandation":  recommandation
+            }
+        )
+    else:
+        requests.post(
+            f"{supabase_url()}/rest/v1/onboarding",
+            headers=headers(),
+            json={
+                "eleve_id":        eleve_id,
+                "onboarding_fait": True,
+                "scores":          scores,
+                "recommandation":  recommandation
+            }
+        )
