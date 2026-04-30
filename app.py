@@ -4,6 +4,7 @@ from auth import page_auth, deconnecter
 from Exercices import page_exercices
 from cours import page_cours
 from progression import page_progression
+from chat import page_chat
 
 # ── Configuration de la page ──────────────────────────────────────
 # Doit être le PREMIER appel Streamlit — avant tout autre st.*
@@ -42,8 +43,8 @@ if "page" not in st.session_state:
 
 page = st.sidebar.radio(
     "Navigation",
-    ["🏠 Accueil", "📖 Cours", "🧠 Exercices", "📊 Ma progression"],
-    index=["🏠 Accueil", "📖 Cours", "🧠 Exercices", "📊 Ma progression"]
+    ["🏠 Accueil", "📖 Cours", "🧠 Exercices",  "💬 Assistant", "📊 Ma progression"],
+    index=["🏠 Accueil", "📖 Cours", "🧠 Exercices", "💬 Assistant", "📊 Ma progression"]
           .index(st.session_state["page"])
 )
 
@@ -55,6 +56,8 @@ st.sidebar.divider()
 # Bouton de déconnexion en bas de la sidebar
 if st.sidebar.button("🚪 Se déconnecter", use_container_width=True):
     deconnecter()
+
+
 
 # ── Routeur de pages ──────────────────────────────────────────────
 # Chaque condition appelle la fonction correspondante dans son module.
@@ -101,3 +104,6 @@ elif page == "🧠 Exercices":
 
 elif page == "📊 Ma progression":
     page_progression()
+
+elif page == "💬 Assistant":
+    page_chat()
