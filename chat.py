@@ -86,7 +86,7 @@ def envoyer_message(historique, message_eleve):
 
 # ── Page principale du chat ───────────────────────────────────────
 def page_chat():
-    st.title("💬 Assistant IA")
+    st.title("💬 Tuteur pro")
     st.caption("Pose tes questions sur l'algorithmique, le C, HTML/CSS et JavaScript.")
 
     eleve = st.session_state["eleve"]
