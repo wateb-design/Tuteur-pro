@@ -124,3 +124,154 @@ def get_stats_par_theme(eleve_id):
         themes[t]["total"]   += 1
         themes[t]["reussis"] += r["reussi"]
     return [(t, v["total"], v["reussis"]) for t, v in themes.items()]
+
+
+
+# ── Progression des cours ─────────────────────────────────────────
+
+def sauvegarder_diagnostic(eleve_id, theme, score, niveau):
+    """Enregistre le résultat du diagnostic pour une matière."""
+    # On vérifie si une ligne existe déjà pour cet élève/thème
+    res = requests.get(
+        f"{supabase_url()}/rest/v1/progression_cours",
+        headers=headers(),
+        params={
+            "select":   "id",
+            "eleve_id": f"eq.{eleve_id}",
+            "theme":    f"eq.{theme}",
+            "chapitre": "eq.__diagnostic__"
+        }
+    )
+    existe = res.json()
+
+    if existe:
+        # Mise à jour si déjà existant
+        requests.patch(
+            f"{supabase_url()}/rest/v1/progression_cours",
+            headers=headers(),
+            params={
+                "eleve_id": f"eq.{eleve_id}",
+                "theme":    f"eq.{theme}",
+                "chapitre": "eq.__diagnostic__"
+            },
+            json={
+                "score_diag":     score,
+                "niveau_detecte": niveau,
+                "date_debut":     "now()"
+            }
+        )
+    else:
+        # Insertion nouvelle ligne
+        requests.post(
+            f"{supabase_url()}/rest/v1/progression_cours",
+            headers=headers(),
+            json={
+                "eleve_id":       eleve_id,
+                "theme":          theme,
+                "chapitre":       "__diagnostic__",
+                "score_diag":     score,
+                "niveau_detecte": niveau,
+                "cours_vu":       False
+            }
+        )
+
+def get_niveau_detecte(eleve_id, theme):
+    """Récupère le niveau détecté lors du diagnostic."""
+    res = requests.get(
+        f"{supabase_url()}/rest/v1/progression_cours",
+        headers=headers(),
+        params={
+            "select":   "niveau_detecte",
+            "eleve_id": f"eq.{eleve_id}",
+            "theme":    f"eq.{theme}",
+            "chapitre": "eq.__diagnostic__"
+        }
+    )
+    data = res.json()
+    if data:
+        return data[0]["niveau_detecte"]
+    return None  # Pas encore de diagnostic
+
+def marquer_cours_vu(eleve_id, theme, chapitre, niveau):
+    """Marque un chapitre comme vu par l'élève."""
+    res = requests.get(
+        f"{supabase_url()}/rest/v1/progression_cours",
+        headers=headers(),
+        params={
+            "select":   "id",
+            "eleve_id": f"eq.{eleve_id}",
+            "theme":    f"eq.{theme}",
+            "chapitre": f"eq.{chapitre}"
+        }
+    )
+    existe = res.json()
+
+    if existe:
+        requests.patch(
+            f"{supabase_url()}/rest/v1/progression_cours",
+            headers=headers(),
+            params={
+                "eleve_id": f"eq.{eleve_id}",
+                "theme":    f"eq.{theme}",
+                "chapitre": f"eq.{chapitre}"
+            },
+            json={"cours_vu": True}
+        )
+    else:
+        requests.post(
+            f"{supabase_url()}/rest/v1/progression_cours",
+            headers=headers(),
+            json={
+                "eleve_id":       eleve_id,
+                "theme":          theme,
+                "chapitre":       chapitre,
+                "niveau_detecte": niveau,
+                "cours_vu":       True
+            }
+        )
+
+def marquer_quiz_reussi(eleve_id, theme, chapitre):
+    """Marque le quiz d'un chapitre comme réussi."""
+    requests.patch(
+        f"{supabase_url()}/rest/v1/progression_cours",
+        headers=headers(),
+        params={
+            "eleve_id": f"eq.{eleve_id}",
+            "theme":    f"eq.{theme}",
+            "chapitre": f"eq.{chapitre}"
+        },
+        json={
+            "quiz_reussi":      True,
+            "date_completion":  "now()"
+        }
+    )
+
+def get_progression_cours(eleve_id, theme):
+    """Retourne tous les chapitres vus pour une matière."""
+    res = requests.get(
+        f"{supabase_url()}/rest/v1/progression_cours",
+        headers=headers(),
+        params={
+            "select":   "chapitre,cours_vu,quiz_reussi,niveau_detecte",
+            "eleve_id": f"eq.{eleve_id}",
+            "theme":    f"eq.{theme}"
+        }
+    )
+    return res.json()
+
+def get_stats_cours(eleve_id):
+    """Retourne le nombre de chapitres vus et quiz réussis."""
+    res = requests.get(
+        f"{supabase_url()}/rest/v1/progression_cours",
+        headers=headers(),
+        params={
+            "select":    "cours_vu,quiz_reussi",
+            "eleve_id":  f"eq.{eleve_id}",
+            "cours_vu":  "eq.true"
+        }
+    )
+    data = res.json()
+    return {
+        "chapitres_vus":  len(data),
+        "quiz_reussis":   sum(1 for d in data if d["quiz_reussi"])
+    }
