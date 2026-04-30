@@ -153,7 +153,7 @@ Structure ta réponse EXACTEMENT ainsi :
 (2 erreurs courantes que font les élèves sur ce sujet)"""
 
     response = client.chat.completions.create(
-        model="llama3-3-70b-versatile",   # ← modèle mis à jour
+        model="llama-3.3-70b-versatile",   # ← modèle mis à jour
         messages=[{"role": "user", "content": prompt}],
         max_tokens=900,
         temperature=0.4
@@ -176,7 +176,7 @@ Réponds UNIQUEMENT en JSON sans texte avant ou après :
 }}"""
 
     response = client.chat.completions.create(
-        model="llama3-3-70b-versatile",   # ← modèle mis à jour
+        model="llama-3.3-70b-versatile",   # ← modèle mis à jour
         messages=[{"role": "user", "content": prompt}],
         max_tokens=400,
         temperature=0.5
