@@ -13,13 +13,17 @@ def inject_css():
     }
 
     /* ── Sidebar ─────────────────────────────────────────────── */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1A1A2E 0%, #16213E 100%) !important;
-        border-right: 1px solid #2D2D5E;
+     [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #534AB7 0%, #3B34A0 100%) !important;
+        border-right: none;
     }
     [data-testid="stSidebar"] * {
-        color: #E8E8F0 !important;
+        color: #FFFFFF !important;
     }
+    [data-testid="stSidebar"] .stRadio label:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+    }   
+    
     [data-testid="stSidebar"] .stRadio label {
         padding: 8px 12px;
         border-radius: 8px;
