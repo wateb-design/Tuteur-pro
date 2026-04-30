@@ -10,20 +10,18 @@ def inject_css():
     /* ── Global ─────────────────────────────────────────────── */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif !important;
+        background-color: #F4F7FC !important;
+        color: #1A202C !important;
     }
 
     /* ── Sidebar ─────────────────────────────────────────────── */
-     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #2563EB 0%, #3B34A0 100%) !important;
-        border-right: none;
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0D9AFC 0%, #0A7FD4 100%) !important;
+        border-right: none !important;
     }
     [data-testid="stSidebar"] * {
         color: #FFFFFF !important;
     }
-    [data-testid="stSidebar"] .stRadio label:hover {
-        background: rgba(255, 255, 255, 0.15) !important;
-    }   
-    
     [data-testid="stSidebar"] .stRadio label {
         padding: 8px 12px;
         border-radius: 8px;
@@ -32,143 +30,135 @@ def inject_css():
         margin: 2px 0;
     }
     [data-testid="stSidebar"] .stRadio label:hover {
-        background: rgba(83, 74, 183, 0.3) !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: rgba(255,255,255,0.85) !important;
+        font-size: 0.9rem;
     }
 
     /* ── Titres ──────────────────────────────────────────────── */
     h1 {
         font-size: 1.8rem !important;
         font-weight: 700 !important;
-        color: #1A1A2E !important;
-        border-bottom: 3px solid #534AB7;
-        padding-bottom: 0.5rem;
+        color: #1A202C !important;
+        border-bottom: 3px solid #0D9AFC !important;
+        padding-bottom: 0.5rem !important;
         margin-bottom: 1.5rem !important;
     }
-    h2, h3 {
+    h2, h3, h4 {
         font-weight: 600 !important;
-        color: #2D2D5E !important;
+        color: #1A202C !important;
     }
 
-    /* ── Boutons principaux ──────────────────────────────────── */
+    /* ── Boutons ─────────────────────────────────────────────── */
     .stButton > button {
         border-radius: 10px !important;
         font-weight: 500 !important;
         font-family: 'Inter', sans-serif !important;
         transition: all 0.2s ease !important;
-        border: 1.5px solid #534AB7 !important;
+        border: 1.5px solid #0D9AFC !important;
+        color: #0D9AFC !important;
+        background: white !important;
         padding: 0.5rem 1.2rem !important;
     }
     .stButton > button:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(83, 74, 183, 0.3) !important;
-        background: #534AB7 !important;
+        box-shadow: 0 4px 12px rgba(13, 154, 252, 0.3) !important;
+        background: #0D9AFC !important;
         color: white !important;
     }
     .stButton > button[kind="primary"] {
-        background: #534AB7 !important;
+        background: #0D9AFC !important;
         color: white !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background: #0A7FD4 !important;
     }
 
     /* ── Métriques ───────────────────────────────────────────── */
     [data-testid="stMetric"] {
-        background: white;
-        border-radius: 12px;
+        background: white !important;
+        border-radius: 14px !important;
         padding: 1rem 1.2rem !important;
-        border: 1px solid #E0DFFF;
-        box-shadow: 0 2px 8px rgba(83, 74, 183, 0.08);
-        transition: box-shadow 0.2s;
+        border: 1px solid #D0E4F7 !important;
+        box-shadow: 0 2px 8px rgba(13, 154, 252, 0.08) !important;
+        transition: box-shadow 0.2s, transform 0.2s !important;
     }
     [data-testid="stMetric"]:hover {
-        box-shadow: 0 4px 16px rgba(83, 74, 183, 0.15);
+        box-shadow: 0 6px 20px rgba(13, 154, 252, 0.15) !important;
+        transform: translateY(-2px) !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.8rem !important;
-        color: #666 !important;
+        font-size: 0.78rem !important;
+        color: #718096 !important;
         font-weight: 500 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
     }
     [data-testid="stMetricValue"] {
         font-size: 1.8rem !important;
         font-weight: 700 !important;
-        color: #534AB7 !important;
+        color: #0D9AFC !important;
     }
 
-    /* ── Zones de texte et inputs ────────────────────────────── */
+    /* ── Inputs et TextArea ──────────────────────────────────── */
     .stTextInput > div > div > input,
     .stTextArea > div > div > textarea {
         border-radius: 10px !important;
-        border: 1.5px solid #D0CFFF !important;
+        border: 1.5px solid #D0E4F7 !important;
+        background: white !important;
         font-family: 'Inter', sans-serif !important;
+        color: #1A202C !important;
         transition: border-color 0.2s !important;
     }
     .stTextInput > div > div > input:focus,
     .stTextArea > div > div > textarea:focus {
-        border-color: #534AB7 !important;
-        box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.15) !important;
+        border-color: #0D9AFC !important;
+        box-shadow: 0 0 0 3px rgba(13, 154, 252, 0.15) !important;
+    }
+
+    /* ── Selectbox ───────────────────────────────────────────── */
+    .stSelectbox > div > div {
+        border-radius: 10px !important;
+        border: 1.5px solid #D0E4F7 !important;
+        background: white !important;
     }
 
     /* ── Code ────────────────────────────────────────────────── */
-    code, pre, .stCode {
+    code, pre {
         font-family: 'JetBrains Mono', monospace !important;
         border-radius: 10px !important;
     }
     [data-testid="stCode"] {
-        border: 1px solid #E0DFFF !important;
+        border: 1px solid #D0E4F7 !important;
         border-radius: 10px !important;
+        background: #F0F7FF !important;
     }
 
-    /* ── Alertes / Info / Success / Error ────────────────────── */
+    /* ── Alertes ─────────────────────────────────────────────── */
     [data-testid="stAlert"] {
         border-radius: 10px !important;
         border: none !important;
         font-weight: 500 !important;
     }
 
-    /* ── Selectbox ───────────────────────────────────────────── */
-    .stSelectbox > div > div {
-        border-radius: 10px !important;
-        border: 1.5px solid #D0CFFF !important;
-    }
-
-    /* ── Divider ─────────────────────────────────────────────── */
-    hr {
-        border-color: #E0DFFF !important;
-        margin: 1.5rem 0 !important;
-    }
-
-    /* ── Chat messages ───────────────────────────────────────── */
-    [data-testid="stChatMessage"] {
-        border-radius: 12px !important;
-        margin-bottom: 0.5rem !important;
-        border: 1px solid #E0DFFF !important;
-    }
-    [data-testid="stChatInput"] > div {
-        border-radius: 12px !important;
-        border: 1.5px solid #D0CFFF !important;
-    }
-
-    /* ── Dataframe ───────────────────────────────────────────── */
-    [data-testid="stDataFrame"] {
-        border-radius: 10px !important;
-        overflow: hidden !important;
-        border: 1px solid #E0DFFF !important;
-    }
-
-    /* ── Cards personnalisées ────────────────────────────────── */
+    /* ── Cartes personnalisées ───────────────────────────────── */
     .tuteur-card {
         background: white;
         border-radius: 14px;
         padding: 1.2rem 1.4rem;
-        border: 1px solid #E0DFFF;
-        box-shadow: 0 2px 8px rgba(83, 74, 183, 0.07);
+        border: 1px solid #D0E4F7;
+        box-shadow: 0 2px 8px rgba(13, 154, 252, 0.07);
         margin-bottom: 1rem;
         transition: box-shadow 0.2s, transform 0.2s;
     }
     .tuteur-card:hover {
-        box-shadow: 0 6px 20px rgba(83, 74, 183, 0.15);
+        box-shadow: 0 6px 20px rgba(13, 154, 252, 0.15);
         transform: translateY(-2px);
     }
+
+    /* ── Badges ──────────────────────────────────────────────── */
     .tuteur-badge {
         display: inline-block;
         padding: 3px 12px;
@@ -177,35 +167,53 @@ def inject_css():
         font-weight: 600;
         margin-bottom: 8px;
     }
-    .badge-facile   { background: #EAF3DE; color: #3B6D11; }
-    .badge-moyen    { background: #FAEEDA; color: #854F0B; }
-    .badge-difficile{ background: #FCEBEB; color: #A32D2D; }
-    .badge-algo     { background: #EEEDFE; color: #3C3489; }
-    .badge-c        { background: #E1F5EE; color: #085041; }
-    .badge-html     { background: #FFF0E0; color: #8A4500; }
-    .badge-js       { background: #FFFBE0; color: #7A6000; }
+    .badge-facile    { background: #EAF3DE; color: #3B6D11; }
+    .badge-moyen     { background: #FEF3C7; color: #92400E; }
+    .badge-difficile { background: #FEE2E2; color: #991B1B; }
+    .badge-algo      { background: #EFF6FF; color: #1D4ED8; }
+    .badge-c         { background: #ECFDF5; color: #065F46; }
+    .badge-html      { background: #FFF7ED; color: #9A3412; }
+    .badge-js        { background: #FEFCE8; color: #713F12; }
 
-    /* ── Page de connexion ───────────────────────────────────── */
-    .auth-container {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        border: 1px solid #E0DFFF;
-        box-shadow: 0 8px 32px rgba(83, 74, 183, 0.12);
+    /* ── Chat ────────────────────────────────────────────────── */
+    [data-testid="stChatMessage"] {
+        border-radius: 12px !important;
+        margin-bottom: 0.5rem !important;
+        border: 1px solid #D0E4F7 !important;
+        background: white !important;
+    }
+    [data-testid="stChatInput"] > div {
+        border-radius: 12px !important;
+        border: 1.5px solid #D0E4F7 !important;
+        background: white !important;
+    }
+
+    /* ── Dataframe ───────────────────────────────────────────── */
+    [data-testid="stDataFrame"] {
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        border: 1px solid #D0E4F7 !important;
+        background: white !important;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    hr {
+        border-color: #D0E4F7 !important;
+        margin: 1.5rem 0 !important;
     }
 
     /* ── Scrollbar ───────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #F8F7FF; }
+    ::-webkit-scrollbar-track { background: #F4F7FC; }
     ::-webkit-scrollbar-thumb {
-        background: #C0BFFF;
+        background: #90CAF9;
         border-radius: 3px;
     }
-    ::-webkit-scrollbar-thumb:hover { background: #534AB7; }
+    ::-webkit-scrollbar-thumb:hover { background: #0D9AFC; }
 
     /* ── Spinner ─────────────────────────────────────────────── */
     .stSpinner > div {
-        border-top-color: #534AB7 !important;
+        border-top-color: #0D9AFC !important;
     }
 
     </style>
