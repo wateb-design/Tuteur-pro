@@ -2,40 +2,74 @@ import streamlit as st
 from groq import Groq
 import json
 import re
+from database import (
+    sauvegarder_diagnostic,
+    get_niveau_detecte,
+    marquer_cours_vu,
+    marquer_quiz_reussi,
+    get_progression_cours
+)
 
-# ── Client Groq ───────────────────────────────────────────────────
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-# ── Contenu des cours mis à jour pour 1ère TI ─────────────────────
-# 4 matières du programme : Algorithmique avancé, Langage C,
-# HTML/CSS, Introduction au JavaScript
+# ── Programme officiel 1ère TI ────────────────────────────────────
 COURS = {
-    "Algorithmique avancé": {
+    "Algorithmique avancée": {
         "icone": "🧠",
         "chapitres": [
             {
-                "titre": "Rappels sur les algorithmes",
-                "description": "Structure d'un algorithme, variables, entrées/sorties"
+                "titre": "Variables, constantes et instructions de base",
+                "competence": "Déclarer et utiliser les variables et les constantes ; utiliser convenablement les instructions algorithmiques de base (lecture, écriture, affectation).",
+                "savoirs": "Types de données, déclaration, affectation, lecture/écriture",
+                "savoir_faire": ["Déclarer une variable/constante", "Écrire une instruction d'affectation", "Utiliser lecture et écriture dans un algorithme séquentiel"]
             },
             {
-                "titre": "Structures conditionnelles",
-                "description": "Si/Sinon, selon/cas — prise de décision dans un algorithme"
+                "titre": "Structures alternatives (Si, Si…Sinon)",
+                "competence": "Utiliser les structures alternatives (Si, Si…Sinon) ; lister des exemples de structures de contrôle.",
+                "savoirs": "Structure Si, Si…Sinon, conditions, opérateurs de comparaison",
+                "savoir_faire": ["Écrire un Si simple", "Écrire un Si…Sinon", "Identifier les instructions d'incrémentation et de décrémentation"]
             },
             {
-                "titre": "Structures répétitives",
-                "description": "Pour, TantQue, Répéter — les boucles en algorithmique"
+                "titre": "Structures itératives (Pour, TantQue, Répéter)",
+                "competence": "Utiliser les structures itératives (Pour…Faire, TantQue…Faire, Répéter…Jusqu'à) ; identifier la condition d'arrêt d'une boucle.",
+                "savoirs": "Boucle Pour, TantQue, Répéter…Jusqu'à, compteur, condition d'arrêt",
+                "savoir_faire": ["Écrire une boucle Pour", "Écrire une boucle TantQue", "Identifier et corriger une boucle infinie"]
             },
             {
-                "titre": "Tableaux et listes",
-                "description": "Déclaration, parcours et manipulation de tableaux"
+                "titre": "Tableaux à une dimension",
+                "competence": "Déclarer un tableau à une dimension ; initialiser, accéder, parcourir, afficher, modifier les éléments.",
+                "savoirs": "Déclaration tableau, indice, parcours séquentiel",
+                "savoir_faire": ["Déclarer un tableau", "Initialiser un tableau", "Parcourir et afficher les éléments"]
             },
             {
-                "titre": "Sous-programmes",
-                "description": "Procédures et fonctions — modulariser un algorithme"
+                "titre": "Enregistrements",
+                "competence": "Déclarer un enregistrement ; initialiser, accéder, afficher, modifier les champs.",
+                "savoirs": "Structure enregistrement, champs, accès aux champs",
+                "savoir_faire": ["Déclarer un enregistrement", "Accéder et modifier les champs", "Utiliser un enregistrement dans un algorithme"]
             },
             {
-                "titre": "Tri et recherche",
-                "description": "Algorithmes de tri (bulles, sélection) et de recherche"
+                "titre": "Fonctions et procédures",
+                "competence": "Déclarer et appeler une fonction/procédure ; distinguer variables locales et globales ; différencier paramètres formels et effectifs.",
+                "savoirs": "Fonction, procédure, paramètres, variables locales/globales",
+                "savoir_faire": ["Écrire une fonction simple", "Écrire une procédure", "Distinguer variables locales et globales"]
+            },
+            {
+                "titre": "Algorigrammes",
+                "competence": "Identifier les symboles d'un algorigramme ; transformer un algorigramme en algorithme ; dérouler un algorigramme.",
+                "savoirs": "Symboles (début/fin, traitement, décision, E/S)",
+                "savoir_faire": ["Identifier les symboles", "Transformer un algorigramme en algorithme", "Dérouler pas à pas"]
+            },
+            {
+                "titre": "Tri par sélection et insertion",
+                "competence": "Exécuter les algorithmes de tri par sélection et insertion ; écrire un algorithme de tri simple.",
+                "savoirs": "Tri par sélection, tri par insertion, comparaison, échange",
+                "savoir_faire": ["Exécuter un tri par sélection", "Exécuter un tri par insertion", "Écrire l'algorithme complet"]
+            },
+            {
+                "titre": "Recherche séquentielle et dichotomique",
+                "competence": "Décrire et écrire les algorithmes de recherche séquentielle et dichotomique.",
+                "savoirs": "Recherche séquentielle, dichotomique, tableau trié",
+                "savoir_faire": ["Écrire une recherche séquentielle", "Exécuter une recherche dichotomique", "Comparer les deux méthodes"]
             },
         ]
     },
@@ -43,28 +77,40 @@ COURS = {
         "icone": "⚙️",
         "chapitres": [
             {
-                "titre": "Introduction au C",
-                "description": "Structure d'un programme C, compilation, premier Hello World"
+                "titre": "Structure minimale d'un programme C",
+                "competence": "Établir la différence entre langage interprété et compilé ; écrire la structure minimale d'un programme C ; afficher un message simple.",
+                "savoirs": "Compilation vs interprétation, #include, main(), printf()",
+                "savoir_faire": ["Écrire un Hello World", "Identifier les parties d'un programme C", "Compiler avec CodeBlocks ou Dev-C++"]
             },
             {
-                "titre": "Variables et types",
-                "description": "int, float, char, double — déclarer et utiliser des variables"
+                "titre": "Variables, constantes et types de base",
+                "competence": "Énumérer les types de base en C ; déclarer une variable et une constante ; utiliser les opérateurs.",
+                "savoirs": "int, float, char, double, const",
+                "savoir_faire": ["Déclarer des variables de différents types", "Utiliser les opérateurs", "Utiliser printf et scanf"]
             },
             {
-                "titre": "Opérateurs et expressions",
-                "description": "Opérateurs arithmétiques, relationnels et logiques"
+                "titre": "Entrées/Sorties — printf et scanf",
+                "competence": "Utiliser les fonctions de stdio.h et math.h (printf, scanf, sqrt, abs, cos).",
+                "savoirs": "printf, scanf, %d %f %c, stdio.h, math.h",
+                "savoir_faire": ["Afficher des données formatées", "Saisir avec scanf", "Utiliser sqrt, abs, cos"]
             },
             {
-                "titre": "Structures de contrôle",
-                "description": "if/else, switch, for, while, do/while en langage C"
+                "titre": "Structures alternatives (if, if…else, switch)",
+                "competence": "Utiliser les structures alternatives (if, if…else, switch) en C.",
+                "savoirs": "if, if…else, else if, switch…case, break",
+                "savoir_faire": ["Écrire un if…else", "Écrire un switch…case", "Traduire Si…Sinon en C"]
             },
             {
-                "titre": "Fonctions",
-                "description": "Déclaration, définition, appel et retour de fonctions"
+                "titre": "Boucles en C (for, while, do…while)",
+                "competence": "Utiliser les boucles (for, while, do…while) ; exécuter pas à pas un programme C.",
+                "savoirs": "for, while, do…while, variable de contrôle",
+                "savoir_faire": ["Écrire une boucle for", "Écrire une boucle while", "Traduire une boucle algorithmique en C"]
             },
             {
-                "titre": "Tableaux et pointeurs",
-                "description": "Tableaux à une dimension, pointeurs et adresses mémoire"
+                "titre": "Traduction algorithme → C",
+                "competence": "Traduire un algorithme en C ; tester et déboguer des programmes C.",
+                "savoirs": "Correspondances algo/C, test, débogage",
+                "savoir_faire": ["Traduire un algorithme complet en C", "Tester et corriger", "Exécuter pas à pas dans un IDE"]
             },
         ]
     },
@@ -72,57 +118,69 @@ COURS = {
         "icone": "🌐",
         "chapitres": [
             {
-                "titre": "Introduction au HTML",
-                "description": "Structure d'une page web, balises de base, doctype"
+                "titre": "Structure HTML et balises essentielles",
+                "competence": "Utiliser les balises appropriées ; insérer liens, images, listes ; utiliser les balises de section.",
+                "savoirs": "DOCTYPE, html, head, body, h1-h6, p, a, img, ul, ol, section",
+                "savoir_faire": ["Créer une page HTML valide", "Insérer un lien relatif/absolu", "Insérer une image", "Imbriquer des listes"]
             },
             {
-                "titre": "Balises essentielles",
-                "description": "Titres, paragraphes, liens, images, listes"
+                "titre": "Tableaux HTML",
+                "competence": "Insérer un tableau ; utiliser border, width, cellpadding ; fusionner avec colspan et rowspan.",
+                "savoirs": "table, tr, td, th, colspan, rowspan, border",
+                "savoir_faire": ["Créer un tableau simple", "Fusionner des cellules", "Styliser un tableau"]
             },
             {
                 "titre": "Formulaires HTML",
-                "description": "input, select, textarea, button — collecter des données"
+                "competence": "Insérer un formulaire (champs, boutons radio, cases à cocher, liste déroulante, boutons).",
+                "savoirs": "form, input, select, textarea, button, type, name",
+                "savoir_faire": ["Créer un formulaire complet", "Utiliser les types d'input", "Organiser les dossiers"]
             },
             {
-                "titre": "Introduction au CSS",
-                "description": "Sélecteurs, propriétés, liaison CSS/HTML"
+                "titre": "CSS — Introduction et sélecteurs",
+                "competence": "Écrire la structure minimale d'une feuille de style ; utiliser background-color, color, font-size, font-family.",
+                "savoirs": "Sélecteurs, propriétés CSS, liaison HTML/CSS",
+                "savoir_faire": ["Lier une feuille CSS", "Utiliser les sélecteurs", "Appliquer les propriétés de base"]
             },
             {
-                "titre": "Mise en page CSS",
-                "description": "Box model, display, flexbox — organiser les éléments"
-            },
-            {
-                "titre": "Styles avancés",
-                "description": "Couleurs, polices, bordures, ombres et animations simples"
+                "titre": "CSS — Mise en page et styles avancés",
+                "competence": "Utiliser width, height, text-align, border, margin, padding, font-weight, text-decoration.",
+                "savoirs": "Box model, margin, padding, border, display",
+                "savoir_faire": ["Comprendre le box model", "Centrer des éléments", "Utiliser margin et padding"]
             },
         ]
     },
-    "Introduction au JavaScript": {
+    "JavaScript": {
         "icone": "✨",
         "chapitres": [
             {
                 "titre": "Introduction au JavaScript",
-                "description": "Rôle du JS, liaison avec HTML, console.log, premiers scripts"
+                "competence": "Énoncer les caractéristiques du JS ; écrire la syntaxe d'insertion dans un document HTML.",
+                "savoirs": "Caractéristiques JS, balise script, insertion",
+                "savoir_faire": ["Insérer un script dans HTML", "Afficher avec alert et console.log", "Distinguer JS vs C"]
             },
             {
-                "titre": "Variables et types",
-                "description": "var, let, const — types string, number, boolean"
+                "titre": "Variables, types et opérateurs",
+                "competence": "Déclarer variables et constantes ; utiliser les opérateurs ; utiliser parseInt() et parseFloat().",
+                "savoirs": "var, let, const, string, number, boolean, opérateurs",
+                "savoir_faire": ["Déclarer avec let/const", "Utiliser les opérateurs", "Convertir avec parseInt/parseFloat"]
             },
             {
-                "titre": "Conditions et boucles",
-                "description": "if/else, for, while — contrôler le flux en JavaScript"
+                "titre": "Structures alternatives et boucles",
+                "competence": "Utiliser if, if…else ; utiliser for, while, do…while ; déclarer et utiliser un tableau.",
+                "savoirs": "if…else, for, while, do…while, tableau",
+                "savoir_faire": ["Écrire un if…else", "Parcourir un tableau", "Créer et initialiser un tableau"]
             },
             {
-                "titre": "Fonctions",
-                "description": "Déclaration, appel, paramètres et valeur de retour"
+                "titre": "Fonctions JavaScript",
+                "competence": "Écrire une fonction qui retourne une valeur ou non ; appeler une fonction.",
+                "savoirs": "function, return, paramètres, portée",
+                "savoir_faire": ["Écrire une fonction avec paramètres", "Appeler une fonction", "Distinguer avec/sans retour"]
             },
             {
-                "titre": "Manipulation du DOM",
-                "description": "getElementById, innerHTML, addEventListener — interagir avec la page"
-            },
-            {
-                "titre": "Événements",
-                "description": "onclick, onmouseover, onsubmit — réagir aux actions utilisateur"
+                "titre": "DOM et événements",
+                "competence": "Accéder aux éléments HTML (getElementById) ; utiliser les événements (onClick, onChange…) ; valider un formulaire.",
+                "savoirs": "getElementById, innerHTML, addEventListener, événements",
+                "savoir_faire": ["Accéder et modifier un élément", "Réagir à un clic", "Valider un formulaire"]
             },
         ]
     },
@@ -131,72 +189,144 @@ COURS = {
 NIVEAUX = ["Débutant", "Intermédiaire", "Avancé"]
 
 
-# ── Génération du contenu d'un chapitre via Groq ──────────────────
-# @st.cache_data évite de rappeler Groq si l'élève revient
-# sur le même chapitre — économise du temps et des tokens.
+# ── Génération contenu APC ────────────────────────────────────────
 @st.cache_data(show_spinner=False)
-def generer_contenu(theme, chapitre, niveau):
-    prompt = f"""Tu es un professeur expert en informatique pour élèves de 1ère TI au Cameroun.
-Rédige un cours clair sur : "{chapitre}" (matière : {theme}, niveau : {niveau}).
+def generer_contenu(theme, chapitre, niveau, competence, savoir_faire):
+    sf_str = "\n".join([f"- {sf}" for sf in savoir_faire])
+    prompt = f"""Tu es un professeur expert en informatique au Cameroun, spécialiste APC.
+Rédige un cours structuré selon le modèle APC pour élèves de 1ère TI, niveau {niveau}.
 
-Structure ta réponse EXACTEMENT ainsi :
-## Explication
-(2-3 paragraphes clairs, langage simple, adapté au niveau {niveau})
+Matière : {theme} | Chapitre : {chapitre}
+Compétence officielle : {competence}
+Savoir-faire : {sf_str}
 
-## Exemple de code
-(un bloc de code commenté, adapté au niveau {niveau})
+Structure EXACTE :
 
-## À retenir
-(3 points essentiels sous forme de liste)
+## 🎯 Compétence visée
+(Reprends la compétence officielle)
 
-## Erreurs fréquentes
-(2 erreurs courantes que font les élèves sur ce sujet)"""
+## 🌍 Situation d'apprentissage
+(Situation concrète du quotidien camerounais — 2-3 phrases)
+
+## 📚 Savoirs essentiels
+(Notions clés expliquées clairement, niveau {niveau})
+
+## 💻 Exemple commenté
+(Code ou algorithme bien commenté, adapté au niveau {niveau})
+
+## ✅ Activités — Savoir-faire
+(Exercices guidés pour chaque savoir-faire listé)
+
+## ⚠️ Erreurs fréquentes
+(2-3 erreurs typiques des élèves de 1ère TI)
+
+## 📝 Synthèse
+(3 points clés à retenir)"""
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",   # ← modèle mis à jour
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=900,
+        max_tokens=1200,
         temperature=0.4
     )
     return response.choices[0].message.content
 
 
-# ── Génération d'un quiz QCM ──────────────────────────────────────
-# Une question générée par Groq après chaque chapitre
-# pour tester la compréhension de l'élève.
+# ── Quiz APC ──────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
-def generer_quiz(theme, chapitre, niveau):
-    prompt = f"""Génère une question QCM sur "{chapitre}" (matière : {theme}, niveau : {niveau}).
-Réponds UNIQUEMENT en JSON sans texte avant ou après :
+def generer_quiz(theme, chapitre, niveau, competence):
+    prompt = f"""Génère un QCM APC pour :
+Matière : {theme} | Chapitre : {chapitre} | Niveau : {niveau}
+Compétence : {competence}
+
+JSON uniquement :
 {{
   "question": "...",
   "choix": ["A. ...", "B. ...", "C. ...", "D. ..."],
   "reponse": "A",
-  "explication": "..."
+  "explication": "...",
+  "savoir_faire_evalue": "..."
 }}"""
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",   # ← modèle mis à jour
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=400,
         temperature=0.5
     )
-    raw = response.choices[0].message.content
-    raw = re.sub(r"```json|```", "", raw).strip()
+    raw = re.sub(r"```json|```", "", response.choices[0].message.content).strip()
     return json.loads(raw)
 
 
-# ── Page principale des cours ─────────────────────────────────────
+# ── Diagnostic de niveau ──────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def generer_diagnostic(theme):
+    prompt = f"""Génère 3 questions QCM de difficulté croissante pour évaluer
+un élève de 1ère TI en {theme} (facile, moyen, difficile).
+JSON uniquement :
+{{
+  "questions": [
+    {{"niveau":"Facile","question":"...","choix":["A. ...","B. ...","C. ...","D. ..."],"reponse":"A","explication":"..."}},
+    {{"niveau":"Moyen","question":"...","choix":["A. ...","B. ...","C. ...","D. ..."],"reponse":"B","explication":"..."}},
+    {{"niveau":"Difficile","question":"...","choix":["A. ...","B. ...","C. ...","D. ..."],"reponse":"C","explication":"..."}}
+  ]
+}}"""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=800,
+        temperature=0.5
+    )
+    raw = re.sub(r"```json|```", "", response.choices[0].message.content).strip()
+    return json.loads(raw)
+
+
+def niveau_depuis_score(score):
+    if score <= 1: return "Débutant"
+    elif score == 2: return "Intermédiaire"
+    else: return "Avancé"
+
+
+# ── Indicateur de progression d'une matière ───────────────────────
+def afficher_progression(progression, total_chapitres):
+    """Affiche une barre de progression pour la matière."""
+    vus = sum(1 for p in progression if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
+    quiz_ok = sum(1 for p in progression if p.get("quiz_reussi"))
+    pct = round(vus / total_chapitres * 100) if total_chapitres > 0 else 0
+
+    st.markdown(
+        f"""<div style='background:#EFF6FF;border-radius:10px;padding:10px 14px;margin-bottom:1rem'>
+        <div style='display:flex;justify-content:space-between;margin-bottom:6px'>
+            <span style='font-size:13px;font-weight:500;color:#1A202C'>Progression</span>
+            <span style='font-size:13px;color:#0D9AFC;font-weight:600'>{vus}/{total_chapitres} chapitres · {quiz_ok} quiz réussis</span>
+        </div>
+        <div style='background:#D0E4F7;border-radius:4px;height:8px'>
+            <div style='background:#0D9AFC;width:{pct}%;height:100%;border-radius:4px;transition:width .3s'></div>
+        </div>
+        </div>""",
+        unsafe_allow_html=True
+    )
+
+
+# ── Page principale ───────────────────────────────────────────────
 def page_cours():
     st.title("📖 Cours")
+    eleve    = st.session_state["eleve"]
+    eleve_id = eleve["id"]
 
-    # ── Sélection du thème ────────────────────────────────────────
+    # ── Sélection de la matière ───────────────────────────────────
     st.markdown("#### Choisis une matière")
-
     cols = st.columns(4)
     for i, (theme, data) in enumerate(COURS.items()):
+        # Progression de la matière depuis Supabase
+        prog  = get_progression_cours(eleve_id, theme)
+        total = len(data["chapitres"])
+        vus   = sum(1 for p in prog if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
+        pct   = round(vus / total * 100) if total > 0 else 0
+
         if cols[i].button(
-            f"{data['icone']} {theme}",
+            f"{data['icone']} {theme}\n{pct}% vu",
             use_container_width=True,
             key=f"theme_{i}"
         ):
@@ -210,87 +340,216 @@ def page_cours():
 
     theme = st.session_state["cours_theme"]
     data  = COURS[theme]
+    total_chapitres = len(data["chapitres"])
 
     st.divider()
+
+    # ── Progression de la matière ─────────────────────────────────
+    prog = get_progression_cours(eleve_id, theme)
+    afficher_progression(prog, total_chapitres)
+
+    # Chapitres déjà vus (pour afficher des coches ✓)
+    chapitres_vus    = {p["chapitre"] for p in prog if p.get("cours_vu")}
+    chapitres_quiz_ok = {p["chapitre"] for p in prog if p.get("quiz_reussi")}
+
+    # ── DIAGNOSTIC ────────────────────────────────────────────────
+    # Vérifie si le diagnostic a déjà été fait (depuis Supabase)
+    niveau_sauvegarde = get_niveau_detecte(eleve_id, theme)
+
+    if not niveau_sauvegarde:
+        st.markdown(f"#### {data['icone']} {theme} — Diagnostic de niveau")
+        st.info("Réponds à 3 questions pour que le tuteur adapte le cours à ton niveau réel.")
+
+        if st.button("🎯 Commencer le diagnostic", use_container_width=True):
+            with st.spinner("Préparation..."):
+                try:
+                    diag = generer_diagnostic(theme)
+                    st.session_state[f"diag_q_{theme}"]  = diag["questions"]
+                    st.session_state[f"diag_e_{theme}"]  = 0
+                    st.session_state[f"diag_s_{theme}"]  = 0
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erreur : {e}")
+
+        if f"diag_q_{theme}" in st.session_state:
+            questions = st.session_state[f"diag_q_{theme}"]
+            etape     = st.session_state.get(f"diag_e_{theme}", 0)
+
+            if etape < len(questions):
+                q = questions[etape]
+                st.markdown(f"**Question {etape+1}/3 — {q['niveau']}**")
+                st.write(q["question"])
+                choix = st.radio("Ta réponse :", q["choix"], index=None, key=f"dq_{etape}")
+
+                if choix:
+                    if choix[0] == q["reponse"]:
+                        st.success("✅ Bonne réponse !")
+                        st.session_state[f"diag_s_{theme}"] += 1
+                    else:
+                        st.error(f"❌ La bonne réponse : {q['reponse']}")
+                    st.info(f"**Explication :** {q['explication']}")
+
+                    if st.button("Suivant →", key=f"dn_{etape}"):
+                        st.session_state[f"diag_e_{theme}"] += 1
+                        st.rerun()
+            else:
+                # Fin du diagnostic
+                score  = st.session_state.get(f"diag_s_{theme}", 0)
+                niveau = niveau_depuis_score(score)
+
+                # Sauvegarde dans Supabase
+                sauvegarder_diagnostic(eleve_id, theme, score, niveau)
+
+                col1, col2 = st.columns(2)
+                col1.metric("Score", f"{score}/3")
+                col2.metric("Niveau détecté", niveau)
+
+                msgs = {
+                    "Débutant":      "Pas d'inquiétude ! On commence depuis les bases. 💪",
+                    "Intermédiaire": "Bon niveau ! On va consolider et approfondir. 📈",
+                    "Avancé":        "Excellent ! On va aux concepts avancés. 🚀"
+                }
+                st.success(msgs[niveau])
+
+                if st.button("📖 Accéder aux chapitres →", use_container_width=True):
+                    st.rerun()
+        return
+
+    # ── Chapitres (après diagnostic) ─────────────────────────────
     st.markdown(f"#### {data['icone']} {theme} — Chapitres")
 
-    # Niveau d'explication adaptatif
-    niveau = st.select_slider(
-        "Niveau d'explication",
-        options=NIVEAUX,
-        value="Débutant"
+    couleurs = {"Débutant": "🔴", "Intermédiaire": "🟡", "Avancé": "🟢"}
+    st.markdown(
+        f"{couleurs.get(niveau_sauvegarde,'🔵')} Ton niveau : **{niveau_sauvegarde}** "
+        f"— Contenu personnalisé activé"
     )
 
-    # Liste des chapitres
+    # L'élève peut ajuster son niveau manuellement
+    niveau = st.select_slider(
+        "Ajuster le niveau :",
+        options=NIVEAUX,
+        value=niveau_sauvegarde
+    )
+
+    st.divider()
+
+    # Liste des chapitres avec statut
     for j, chap in enumerate(data["chapitres"], 1):
+        vu      = chap["titre"] in chapitres_vus
+        quiz_ok = chap["titre"] in chapitres_quiz_ok
+        statut  = "✅" if quiz_ok else ("👁️" if vu else "⭕")
+
         col_btn, col_desc = st.columns([1, 3])
-        if col_btn.button(f"Chapitre {j}", key=f"chap_{j}", use_container_width=True):
+        if col_btn.button(
+            f"{statut} Ch.{j}",
+            key=f"chap_{j}",
+            use_container_width=True
+        ):
             st.session_state["cours_chapitre"] = chap["titre"]
             st.session_state["cours_niveau"]   = niveau
             st.session_state["quiz_repondu"]   = False
             st.rerun()
+
         col_desc.markdown(
             f"**{chap['titre']}**  \n"
-            f"<span style='font-size:13px;color:gray'>{chap['description']}</span>",
+            f"<span style='font-size:12px;color:#0D9AFC'>🎯 {chap['competence'][:90]}...</span>",
             unsafe_allow_html=True
         )
 
     if not st.session_state.get("cours_chapitre"):
         return
 
-    chapitre = st.session_state["cours_chapitre"]
-    niveau   = st.session_state.get("cours_niveau", "Débutant")
+    # ── Contenu du chapitre ───────────────────────────────────────
+    chapitre_titre = st.session_state["cours_chapitre"]
+    niveau_cours   = st.session_state.get("cours_niveau", niveau_sauvegarde)
+
+    chap_data = next(
+        (c for c in data["chapitres"] if c["titre"] == chapitre_titre), None
+    )
+    if not chap_data:
+        return
 
     st.divider()
-    st.markdown(f"### 📘 {chapitre}")
-    st.caption(f"Matière : {theme} · Niveau : {niveau}")
+    st.markdown(f"### 📘 {chapitre_titre}")
+    st.caption(f"{theme} · Niveau : {niveau_cours}")
 
-    # Génération et affichage du contenu
-    with st.spinner("Groq génère ton cours..."):
-        contenu = generer_contenu(theme, chapitre, niveau)
+    # Carte compétence APC
+    st.markdown(
+        f"""<div style='background:#EFF6FF;border-left:4px solid #0D9AFC;
+        border-radius:8px;padding:12px 16px;margin-bottom:1rem'>
+        <strong>🎯 Compétence visée</strong><br>
+        <span style='font-size:14px'>{chap_data['competence']}</span>
+        </div>""",
+        unsafe_allow_html=True
+    )
+
+    # Carte savoir-faire
+    sf_list = "".join([f"<li>{sf}</li>" for sf in chap_data["savoir_faire"]])
+    st.markdown(
+        f"""<div style='background:#F0FFF4;border-left:4px solid #38A169;
+        border-radius:8px;padding:12px 16px;margin-bottom:1rem'>
+        <strong>✅ Savoir-faire à développer</strong>
+        <ul style='margin:8px 0 0 0;font-size:14px'>{sf_list}</ul>
+        </div>""",
+        unsafe_allow_html=True
+    )
+
+    # Génération du cours APC
+    with st.spinner("Groq génère le cours selon le programme officiel..."):
+        contenu = generer_contenu(
+            theme, chapitre_titre, niveau_cours,
+            chap_data["competence"], chap_data["savoir_faire"]
+        )
+
+    # Marquer comme vu dans Supabase
+    marquer_cours_vu(eleve_id, theme, chapitre_titre, niveau_cours)
+
     st.markdown(contenu)
 
-    # ── Quiz de compréhension ─────────────────────────────────────
+    # ── Évaluation APC ────────────────────────────────────────────
     st.divider()
-    st.markdown("#### 🧪 Teste ta compréhension")
+    st.markdown("#### 🧪 Évaluation des acquis")
 
     if "quiz_actuel" not in st.session_state or \
-       st.session_state.get("quiz_chapitre") != chapitre:
-        with st.spinner("Préparation du quiz..."):
+       st.session_state.get("quiz_chapitre") != chapitre_titre:
+        with st.spinner("Préparation de l'évaluation..."):
             try:
-                st.session_state["quiz_actuel"]   = generer_quiz(theme, chapitre, niveau)
-                st.session_state["quiz_chapitre"] = chapitre
+                st.session_state["quiz_actuel"]   = generer_quiz(
+                    theme, chapitre_titre, niveau_cours, chap_data["competence"]
+                )
+                st.session_state["quiz_chapitre"] = chapitre_titre
                 st.session_state["quiz_repondu"]  = False
             except Exception as e:
-                st.warning(f"Quiz indisponible : {e}")
+                st.warning(f"Évaluation indisponible : {e}")
                 return
 
-    quiz = st.session_state["quiz_actuel"]
+    quiz  = st.session_state["quiz_actuel"]
     st.write(quiz["question"])
+    st.caption(f"*Savoir-faire évalué : {quiz.get('savoir_faire_evalue', '')}*")
     choix = st.radio("Ta réponse :", quiz["choix"], index=None)
 
     if choix and not st.session_state.get("quiz_repondu"):
-        lettre_choisie  = choix[0]
-        lettre_correcte = quiz["reponse"]
-        if lettre_choisie == lettre_correcte:
-            st.success("Bonne réponse ! 🎉")
+        if choix[0] == quiz["reponse"]:
+            st.success("Bonne réponse ! Compétence acquise ✅")
+            # Sauvegarder quiz réussi dans Supabase
+            marquer_quiz_reussi(eleve_id, theme, chapitre_titre)
         else:
-            st.error(f"Pas tout à fait. La bonne réponse était : {lettre_correcte}")
+            st.error(f"Pas tout à fait. Réponse correcte : {quiz['reponse']}")
         st.info(f"**Explication :** {quiz['explication']}")
         st.session_state["quiz_repondu"] = True
 
-    # Bouton chapitre suivant
+    # Navigation
     st.divider()
     chapitres_liste = [c["titre"] for c in data["chapitres"]]
-    idx_actuel = chapitres_liste.index(chapitre)
+    idx = chapitres_liste.index(chapitre_titre)
 
-    if idx_actuel < len(chapitres_liste) - 1:
+    if idx < len(chapitres_liste) - 1:
         if st.button("Chapitre suivant →", use_container_width=True):
-            st.session_state["cours_chapitre"] = chapitres_liste[idx_actuel + 1]
+            st.session_state["cours_chapitre"] = chapitres_liste[idx + 1]
             st.session_state["quiz_repondu"]   = False
             st.rerun()
     else:
-        st.success("Tu as terminé tous les chapitres de cette matière ! 🎉")
+        st.success("🎉 Tu as terminé tous les chapitres de cette matière !")
         if st.button("Aller aux exercices →", use_container_width=True):
             st.session_state["page"] = "🧠 Exercices"
             st.rerun()
