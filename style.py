@@ -16,11 +16,11 @@ def inject_css():
 
     /* ── Sidebar ─────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0D9AFC 0%, #0A7FD4 100%) !important;
-        border-right: none !important;
+        background: linear-gradient(180deg, #1E3A5F 0%, #1A3354 100%) !important;
+        border-right: 1px solid #2A4A7F !important;
     }
     [data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
+        color: #E8F0FE !important;
     }
     [data-testid="stSidebar"] .stRadio label {
         padding: 8px 12px;
@@ -30,10 +30,10 @@ def inject_css():
         margin: 2px 0;
     }
     [data-testid="stSidebar"] .stRadio label:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
+        background: rgba(255, 255, 255, 0.1) !important;
     }
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-        color: rgba(255,255,255,0.85) !important;
+        color: rgba(232, 240, 254, 0.75) !important;
         font-size: 0.9rem;
     }
 
@@ -214,6 +214,25 @@ def inject_css():
     /* ── Spinner ─────────────────────────────────────────────── */
     .stSpinner > div {
         border-top-color: #0D9AFC !important;
+    }
+
+     /* ── Bouton déconnexion ──────────────────────────────────── */
+    [data-testid="stSidebar"] .stButton > button {
+        background: transparent !important;
+        border: 1.5px solid rgba(255,255,255,0.3) !important;
+        color: #E8F0FE !important;
+        border-radius: 10px !important;
+        width: 100% !important;
+        margin-top: 0.5rem !important;
+        font-size: 0.85rem !important;
+        transition: all 0.2s !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: rgba(220, 53, 69, 0.2) !important;
+        border-color: #DC3545 !important;
+        color: #FF8A95 !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     </style>
