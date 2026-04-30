@@ -16,7 +16,7 @@ def inject_css():
 
     /* ── Sidebar ─────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #77B5FE 0%, #1A3354 100%) !important;
+        background: #77B5FE !important;
         border-right: 1px solid #2A4A7F !important;
     }
     [data-testid="stSidebar"] * {
