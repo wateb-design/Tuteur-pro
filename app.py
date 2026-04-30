@@ -7,6 +7,8 @@ from progression import page_progression
 from chat import page_chat
 # Ajoutez cet import avec les autres :
 from style import inject_css
+from onboarding import page_onboarding
+from database import get_onboarding
 
 # ── Configuration de la page ──────────────────────────────────────
 # Doit être le PREMIER appel Streamlit — avant tout autre st.*
@@ -31,6 +33,21 @@ if "eleve" not in st.session_state:
     page_auth()
     st.stop()
 
+# Ajoutez l'import en haut :
+from onboarding import page_onboarding
+from database import get_onboarding
+
+# Juste après init_db() et la garde auth, avant la sidebar :
+# ── Onboarding : première connexion ──────────────────────────────
+onboarding_data = get_onboarding(eleve["id"])
+onboarding_fait = (
+    onboarding_data and onboarding_data.get("onboarding_fait")
+) or st.session_state.get("onboarding_fait", False)
+
+if not onboarding_fait:
+    page_onboarding()
+    st.stop()
+    
 # ── Sidebar : navigation et déconnexion ──────────────────────────
 # Visible uniquement si l'élève est connecté (code au-dessus du stop).
 eleve = st.session_state["eleve"]
