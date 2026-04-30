@@ -15,7 +15,7 @@ inject_css()
 # Doit être le PREMIER appel Streamlit — avant tout autre st.*
 # layout="wide" utilise toute la largeur de l'écran.
 st.set_page_config(
-    inject_css()
+    inject_css(),
     page_title="Tuteur IA — Programmation",
     page_icon="🤖",
     layout="wide"
