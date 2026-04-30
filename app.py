@@ -39,7 +39,7 @@ from database import get_onboarding
 
 # Juste après init_db() et la garde auth, avant la sidebar :
 # ── Onboarding : première connexion ──────────────────────────────
-onboarding_data = get_onboarding(eleve["id"])
+onboarding_data = get_onboarding(eleves["id"])
 onboarding_fait = (
     onboarding_data and onboarding_data.get("onboarding_fait")
 ) or st.session_state.get("onboarding_fait", False)
