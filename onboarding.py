@@ -79,27 +79,79 @@ def generer_recommandation(prenom, scores):
 L'élève {prenom} vient de passer un diagnostic. Voici ses scores :
 {scores_str}
 
-Génère une recommandation personnalisée en JSON :
+Génère une recommandation personnalisée.
+Réponds UNIQUEMENT avec du JSON valide, sans texte avant ou après, sans markdown :
 {{
-  "niveau_global": "Débutant / Intermédiaire / Avancé",
-  "message": "Message encourageant personnalisé de 2-3 phrases pour {prenom}",
-  "matiere_prioritaire": "La matière avec le score le plus faible",
+  "niveau_global": "Débutant",
+  "message": "Message encourageant pour {prenom} en 2 phrases.",
+  "matiere_prioritaire": "Algorithmique avancée",
   "plan": [
-    {{"ordre": 1, "matiere": "...", "raison": "...", "conseil": "..."}},
-    {{"ordre": 2, "matiere": "...", "raison": "...", "conseil": "..."}},
-    {{"ordre": 3, "matiere": "...", "raison": "...", "conseil": "..."}},
-    {{"ordre": 4, "matiere": "...", "raison": "...", "conseil": "..."}}
+    {{"ordre": 1, "matiere": "Algorithmique avancée", "raison": "score faible", "conseil": "commence par les bases"}},
+    {{"ordre": 2, "matiere": "Langage C", "raison": "...", "conseil": "..."}},
+    {{"ordre": 3, "matiere": "HTML et CSS", "raison": "...", "conseil": "..."}},
+    {{"ordre": 4, "matiere": "JavaScript", "raison": "...", "conseil": "..."}}
   ]
 }}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=600,
-        temperature=0.4
-    )
-    raw = re.sub(r"```json|```", "", response.choices[0].message.content).strip()
-    return json.loads(raw)
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu es un assistant qui répond UNIQUEMENT en JSON valide, sans aucun texte avant ou après."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=800,
+            temperature=0.3  # Température basse → réponse plus fiable
+        )
+
+        raw = response.choices[0].message.content.strip()
+
+        # Nettoyage robuste : supprime tout ce qui n'est pas du JSON
+        raw = re.sub(r"```json|```", "", raw).strip()
+
+        # Si la réponse contient du texte avant le {, on l'ignore
+        debut = raw.find("{")
+        fin   = raw.rfind("}") + 1
+        if debut != -1 and fin > debut:
+            raw = raw[debut:fin]
+
+        return json.loads(raw)
+
+    except Exception as e:
+        # Fallback : recommandation par défaut si Groq échoue
+        st.warning(f"Recommandation auto générée (erreur IA : {e})")
+
+        # Calcul de la matière la plus faible sans Groq
+        matiere_faible = min(
+            scores.items(),
+            key=lambda x: x[1]["reussis"] / x[1]["total"] if x[1]["total"] > 0 else 1
+        )[0]
+
+        total_reussis = sum(v["reussis"] for v in scores.values())
+        total_q       = sum(v["total"] for v in scores.values())
+        taux          = round(total_reussis / total_q * 100) if total_q > 0 else 0
+
+        niveau = "Débutant" if taux < 50 else "Intermédiaire" if taux < 80 else "Avancé"
+
+        return {
+            "niveau_global":       niveau,
+            "message":             f"Bravo {prenom} pour avoir complété le diagnostic ! Voici ton plan personnalisé.",
+            "matiere_prioritaire": matiere_faible,
+            "plan": [
+                {
+                    "ordre":   i + 1,
+                    "matiere": m,
+                    "raison":  f"Score : {v['reussis']}/{v['total']}",
+                    "conseil": "Commence par les chapitres de base."
+                }
+                for i, (m, v) in enumerate(
+                    sorted(scores.items(), key=lambda x: x[1]["reussis"] / x[1]["total"] if x[1]["total"] > 0 else 0)
+                )
+            ]
+        }
 
 
 # ── Page d'onboarding ─────────────────────────────────────────────
