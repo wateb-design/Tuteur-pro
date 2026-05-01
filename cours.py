@@ -261,25 +261,97 @@ JSON uniquement :
 # ── Diagnostic de niveau ──────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def generer_diagnostic(theme):
-    prompt = f"""Génère 3 questions QCM de difficulté croissante pour évaluer
-un élève de 1ère TI en {theme} (facile, moyen, difficile).
-JSON uniquement :
+    prompt = f"""Tu es un professeur d'informatique au Cameroun.
+Génère exactement 3 questions QCM de difficulté croissante pour évaluer
+un élève de 1ère TI en {theme}.
+
+Réponds UNIQUEMENT avec du JSON valide, sans texte avant ou après.
+Utilise uniquement des guillemets doubles. Pas d'apostrophes dans les textes.
+Format exact :
 {{
   "questions": [
-    {{"niveau":"Facile","question":"...","choix":["A. ...","B. ...","C. ...","D. ..."],"reponse":"A","explication":"..."}},
-    {{"niveau":"Moyen","question":"...","choix":["A. ...","B. ...","C. ...","D. ..."],"reponse":"B","explication":"..."}},
-    {{"niveau":"Difficile","question":"...","choix":["A. ...","B. ...","C. ...","D. ..."],"reponse":"C","explication":"..."}}
+    {{
+      "niveau": "Facile",
+      "question": "Question facile sur {theme} ?",
+      "choix": ["A. choix1", "B. choix2", "C. choix3", "D. choix4"],
+      "reponse": "A",
+      "explication": "Explication simple."
+    }},
+    {{
+      "niveau": "Moyen",
+      "question": "Question moyenne sur {theme} ?",
+      "choix": ["A. choix1", "B. choix2", "C. choix3", "D. choix4"],
+      "reponse": "B",
+      "explication": "Explication moyenne."
+    }},
+    {{
+      "niveau": "Difficile",
+      "question": "Question difficile sur {theme} ?",
+      "choix": ["A. choix1", "B. choix2", "C. choix3", "D. choix4"],
+      "reponse": "C",
+      "explication": "Explication avancee."
+    }}
   ]
 }}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=800,
-        temperature=0.5
-    )
-    raw = re.sub(r"```json|```", "", response.choices[0].message.content).strip()
-    return json.loads(raw)
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu reponds UNIQUEMENT en JSON valide. Pas de texte avant ou apres. Pas de markdown. Pas d apostrophes dans les valeurs JSON."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.2  # Très bas → JSON plus fiable
+        )
+
+        raw = response.choices[0].message.content.strip()
+
+        # Nettoyage robuste
+        raw = re.sub(r"```json|```", "", raw).strip()
+
+        # Extraire uniquement le bloc JSON
+        debut = raw.find("{")
+        fin   = raw.rfind("}") + 1
+        if debut != -1 and fin > debut:
+            raw = raw[debut:fin]
+
+        return json.loads(raw)
+
+    except json.JSONDecodeError as e:
+        # Fallback : questions génériques si JSON invalide
+        st.warning("Génération automatique du diagnostic...")
+        return {
+            "questions": [
+                {
+                    "niveau": "Facile",
+                    "question": f"Parmi les éléments suivants, lequel appartient au cours de {theme} ?",
+                    "choix": ["A. Variable", "B. Photoshop", "C. Excel", "D. PowerPoint"],
+                    "reponse": "A",
+                    "explication": "Une variable est un concept fondamental en programmation."
+                },
+                {
+                    "niveau": "Moyen",
+                    "question": f"Quelle structure permet de répéter des instructions en {theme} ?",
+                    "choix": ["A. Un tableau", "B. Une boucle", "C. Une couleur", "D. Un fichier"],
+                    "reponse": "B",
+                    "explication": "Une boucle permet de répéter des instructions."
+                },
+                {
+                    "niveau": "Difficile",
+                    "question": f"Qu'est-ce qu'une fonction en programmation ?",
+                    "choix": ["A. Un calcul mathématique", "B. Un bloc de code réutilisable", "C. Un type de variable", "D. Une boucle infinie"],
+                    "reponse": "B",
+                    "explication": "Une fonction est un bloc de code réutilisable qui effectue une tâche précise."
+                }
+            ]
+        }
+    except Exception as e:
+        st.error(f"Erreur : {e}")
+        return None
 
 
 def niveau_depuis_score(score):
