@@ -191,14 +191,87 @@ NIVEAUX = ["Débutant", "Intermédiaire", "Avancé"]
 
 # ── Génération contenu APC ────────────────────────────────────────
 @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def generer_contenu(theme, chapitre, niveau, competence, savoir_faire):
     sf_str = "\n".join([f"- {sf}" for sf in savoir_faire])
+
+    # ── Instructions spécifiques selon la matière ─────────────────
+    # Chaque matière a ses conventions pédagogiques propres.
+    instructions_specifiques = {
+        "Algorithmique avancée": """
+IMPORTANT — Règles strictes pour l'algorithmique :
+- Utilise UNIQUEMENT le pseudo-code algorithmique (jamais Python, C ou autre langage)
+- Syntaxe obligatoire du pseudo-code :
+  * Déclaration  : Variable nom : type
+  * Affectation  : nom ← valeur
+  * Lecture      : Lire(nom)
+  * Écriture     : Ecrire(nom)
+  * Condition    : Si condition Alors ... Sinon ... FinSi
+  * Boucle Pour  : Pour i ← 1 à n Faire ... FinPour
+  * Boucle Tant  : TantQue condition Faire ... FinTantQue
+  * Répéter      : Répéter ... Jusqu'à condition
+  * Fonction     : Fonction nom(params) : type ... FinFonction
+  * Procédure    : Procédure nom(params) ... FinProcédure
+- Chaque exemple doit être un algorithme complet avec Début...Fin
+- Montre l'exécution pas à pas (trace d'exécution) pour les exemples""",
+
+        "Algorithmique avancée_algorigramme": """
+IMPORTANT — Règles pour les algorigrammes :
+- Décris les symboles en TEXTE (rectangles, losanges, ovales, parallélogrammes)
+- Représente les algorigrammes en ASCII art ou tableau textuel comme ceci :
+  ┌─────────────┐
+  │    DEBUT    │  ← Ovale
+  └──────┬──────┘
+         ↓
+  ┌─────────────┐
+  │  Lire (n)   │  ← Parallélogramme (Entrée)
+  └──────┬──────┘
+         ↓
+  ◇ n > 0 ?     ← Losange (Décision)
+  Oui ↓  Non →
+- Fournis au moins 2 exemples d'algorigrammes illustrés
+- Montre la correspondance algorigramme ↔ algorithme pseudo-code""",
+
+        "Langage C": """
+IMPORTANT — Règles pour le Langage C :
+- Tout code doit être en C standard (C89/C99)
+- Toujours inclure les headers nécessaires (#include <stdio.h>)
+- Chaque programme doit avoir une fonction main() complète
+- Montre la compilation : gcc programme.c -o programme
+- Indique la sortie attendue du programme""",
+
+        "HTML et CSS": """
+IMPORTANT — Règles pour HTML/CSS :
+- HTML5 uniquement (DOCTYPE html)
+- Montre toujours la structure complète de la page
+- CSS dans un fichier séparé ou balise <style>
+- Montre le rendu visuel attendu en décrivant ce que l'élève verra
+- Utilise des exemples concrets camerounais (noms, villes, contextes locaux)""",
+
+        "JavaScript": """
+IMPORTANT — Règles pour JavaScript :
+- JavaScript moderne (ES6+) : let, const, arrow functions si niveau avancé
+- Toujours lié à une page HTML — montre l'intégration complète
+- Montre la console.log() pour déboguer
+- Illustre l'interaction avec le DOM (getElementById, innerHTML)
+- Montre le résultat attendu dans le navigateur"""
+    }
+
+    # Sélection de l'instruction selon matière et chapitre
+    if theme == "Algorithmique avancée" and "algorigramme" in chapitre.lower():
+        instruction = instructions_specifiques.get("Algorithmique avancée_algorigramme", "")
+    else:
+        instruction = instructions_specifiques.get(theme, "")
+
     prompt = f"""Tu es un professeur expert en informatique au Cameroun, specialiste APC.
 Redige un cours structure selon le modele APC pour eleves de 1ere TI, niveau {niveau}.
 
 Matiere : {theme} | Chapitre : {chapitre}
 Competence officielle : {competence}
-Savoir-faire : {sf_str}
+Savoir-faire a developper :
+{sf_str}
+
+{instruction}
 
 Structure EXACTE — respecte ces titres mot pour mot :
 
@@ -206,52 +279,60 @@ Structure EXACTE — respecte ces titres mot pour mot :
 (Reprends la competence officielle telle quelle)
 
 ## 🧩 Situation-probleme
-Construis une situation-probleme complete avec ces 4 composants obligatoires :
+Construis une situation-probleme complete avec ces 4 composants :
 
-**Contexte** : Decris une situation reelle du quotidien camerounais liee a {theme}.
-Reponds aux questions : qui ? ou ? quand ? pourquoi ?
-(1-2 phrases concretes et realistes)
+**Contexte** : Situation reelle du quotidien camerounais liee a {theme}.
+(Reponds a : qui ? ou ? quand ? pourquoi ? — 2-3 phrases)
 
-**Support** : Fournis les ressources necessaires pour resoudre le probleme.
-Peut inclure : un extrait de code, un tableau de donnees, un schema textuel,
-un algorithme incomplet, ou tout element d information utile.
+**Support** : Ressources fournies a l eleve pour resoudre le probleme.
+(Pseudo-code incomplet, tableau de donnees, schema, etc. selon la matiere)
 
-**Tache** : Formule le defi principal que l eleve doit relever.
-La tache doit necessiter la combinaison de plusieurs savoirs de {chapitre}.
-Commence par un verbe d action (Ecris, Construis, Realise, Developpe...).
+**Tache** : Le defi principal — commence par un verbe d action.
+(Doit combiner plusieurs savoirs du chapitre {chapitre})
 
 **Consignes** :
-1. (Premiere instruction claire et precise)
-2. (Deuxieme instruction)
-3. (Troisieme instruction si necessaire)
-Note : les consignes indiquent ce qui est attendu SANS donner la solution.
+1. Premiere instruction precise
+2. Deuxieme instruction
+3. Troisieme instruction
+(Sans donner la solution)
 
 ## 📚 Savoirs essentiels
-(Notions cles expliquees clairement, niveau {niveau})
+(Notions cles avec definitions et explications — niveau {niveau})
 
 ## 💻 Exemple commente
-(Code ou algorithme bien commente, adapte au niveau {niveau})
+(Exemple principal illustrant le chapitre — avec trace d execution si algorithmique)
 
-## ✅ Activites — Savoir-faire
-(Exercices guides pour chaque savoir-faire liste)
+## 🔁 Exercice guide
+(Un exercice pas a pas que l eleve fait avec toi — sous forme de dialogue)
+
+## ✅ Savoir-faire — A toi de jouer
+(Un exercice par savoir-faire liste, avec indication de la difficulte)
 
 ## ⚠️ Erreurs frequentes
-(2-3 erreurs typiques des eleves de 1ere TI)
+(2-3 erreurs typiques avec explication de la correction)
 
 ## 📝 Synthese
-(3 points cles a retenir)"""
+(3 points cles a retenir sous forme de tableau ou liste structuree)"""
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
             {
                 "role": "system",
-                "content": "Tu es un professeur expert en APC au Cameroun. Tu rediges des cours structures, clairs et pedagogiques pour des eleves de 1ere TI. Tu respectes strictement la structure demandee."
+                "content": f"""Tu es un professeur expert en informatique au Cameroun.
+Tu enseignes en 1ere TI selon le programme officiel camerounais.
+Tu respectes STRICTEMENT les conventions de chaque matiere :
+- Algorithmique : pseudo-code UNIQUEMENT (jamais Python ou autre langage)
+- Algorigrammes : schemas ASCII + correspondance pseudo-code
+- Langage C : code C standard avec main() complete
+- HTML/CSS : HTML5 avec structure complete
+- JavaScript : JS moderne integre dans HTML
+Tu structures toujours tes cours selon le modele APC."""
             },
             {"role": "user", "content": prompt}
         ],
-        max_tokens=1400,
-        temperature=0.4
+        max_tokens=1600,
+        temperature=0.3
     )
     return response.choices[0].message.content
 
