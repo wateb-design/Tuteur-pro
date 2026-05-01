@@ -210,7 +210,7 @@ Construis une situation-probleme complete avec ces 4 composants obligatoires :
 
 **Contexte** : Decris une situation reelle du quotidien camerounais liee a {theme}.
 Reponds aux questions : qui ? ou ? quand ? pourquoi ?
-(2-3 phrases concretes et realistes)
+(1-2 phrases concretes et realistes)
 
 **Support** : Fournis les ressources necessaires pour resoudre le probleme.
 Peut inclure : un extrait de code, un tableau de donnees, un schema textuel,
@@ -223,8 +223,7 @@ Commence par un verbe d action (Ecris, Construis, Realise, Developpe...).
 **Consignes** :
 1. (Premiere instruction claire et precise)
 2. (Deuxieme instruction)
-3. (Troisieme instruction)
-4. (Quatrieme instruction si necessaire)
+3. (Troisieme instruction si necessaire)
 Note : les consignes indiquent ce qui est attendu SANS donner la solution.
 
 ## 📚 Savoirs essentiels
