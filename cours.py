@@ -193,40 +193,65 @@ NIVEAUX = ["Débutant", "Intermédiaire", "Avancé"]
 @st.cache_data(show_spinner=False)
 def generer_contenu(theme, chapitre, niveau, competence, savoir_faire):
     sf_str = "\n".join([f"- {sf}" for sf in savoir_faire])
-    prompt = f"""Tu es un professeur expert en informatique au Cameroun, spécialiste APC.
-Rédige un cours structuré selon le modèle APC pour élèves de 1ère TI, niveau {niveau}.
+    prompt = f"""Tu es un professeur expert en informatique au Cameroun, specialiste APC.
+Redige un cours structure selon le modele APC pour eleves de 1ere TI, niveau {niveau}.
 
-Matière : {theme} | Chapitre : {chapitre}
-Compétence officielle : {competence}
+Matiere : {theme} | Chapitre : {chapitre}
+Competence officielle : {competence}
 Savoir-faire : {sf_str}
 
-Structure EXACTE :
+Structure EXACTE — respecte ces titres mot pour mot :
 
-## 🎯 Compétence visée
-(Reprends la compétence officielle)
+## 🎯 Competence visee
+(Reprends la competence officielle telle quelle)
 
-## 🌍 Situation d'apprentissage
-(Situation concrète du quotidien camerounais — 2-3 phrases)
+## 🧩 Situation-probleme
+Construis une situation-probleme complete avec ces 4 composants obligatoires :
+
+**Contexte** : Decris une situation reelle du quotidien camerounais liee a {theme}.
+Reponds aux questions : qui ? ou ? quand ? pourquoi ?
+(2-3 phrases concretes et realistes)
+
+**Support** : Fournis les ressources necessaires pour resoudre le probleme.
+Peut inclure : un extrait de code, un tableau de donnees, un schema textuel,
+un algorithme incomplet, ou tout element d information utile.
+
+**Tache** : Formule le defi principal que l eleve doit relever.
+La tache doit necessiter la combinaison de plusieurs savoirs de {chapitre}.
+Commence par un verbe d action (Ecris, Construis, Realise, Developpe...).
+
+**Consignes** :
+1. (Premiere instruction claire et precise)
+2. (Deuxieme instruction)
+3. (Troisieme instruction)
+4. (Quatrieme instruction si necessaire)
+Note : les consignes indiquent ce qui est attendu SANS donner la solution.
 
 ## 📚 Savoirs essentiels
-(Notions clés expliquées clairement, niveau {niveau})
+(Notions cles expliquees clairement, niveau {niveau})
 
-## 💻 Exemple commenté
-(Code ou algorithme bien commenté, adapté au niveau {niveau})
+## 💻 Exemple commente
+(Code ou algorithme bien commente, adapte au niveau {niveau})
 
-## ✅ Activités — Savoir-faire
-(Exercices guidés pour chaque savoir-faire listé)
+## ✅ Activites — Savoir-faire
+(Exercices guides pour chaque savoir-faire liste)
 
-## ⚠️ Erreurs fréquentes
-(2-3 erreurs typiques des élèves de 1ère TI)
+## ⚠️ Erreurs frequentes
+(2-3 erreurs typiques des eleves de 1ere TI)
 
-## 📝 Synthèse
-(3 points clés à retenir)"""
+## 📝 Synthese
+(3 points cles a retenir)"""
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=1200,
+        messages=[
+            {
+                "role": "system",
+                "content": "Tu es un professeur expert en APC au Cameroun. Tu rediges des cours structures, clairs et pedagogiques pour des eleves de 1ere TI. Tu respectes strictement la structure demandee."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=1400,
         temperature=0.4
     )
     return response.choices[0].message.content
