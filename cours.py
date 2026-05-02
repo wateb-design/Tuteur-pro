@@ -195,9 +195,9 @@ def generer_contenu(theme, chapitre, niveau, competence, savoir_faire):
     sf_str = "\n".join([f"- {sf}" for sf in savoir_faire])
 
     if theme == "Algorithmique avancée" and "algorigramme" in chapitre.lower():
-    instruction = instructions_specifiques.get("Algorithmique avancée_algorigramme", "")
-else:
-    instruction = instructions_specifiques.get(theme, "")
+        instruction = instructions_specifiques.get("Algorithmique avancée_algorigramme", "")
+    else:
+        instruction = instructions_specifiques.get(theme, "")
 
     prompt = f"""Tu es un professeur expert en informatique au Cameroun, specialiste APC.
 Redige un cours complet et detaille selon le modele APC pour eleves de 1ere TI, niveau {niveau}.
