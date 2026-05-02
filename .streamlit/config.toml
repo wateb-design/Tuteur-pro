@@ -1,6 +1,9 @@
 [theme]
-primaryColor = "#0D9AFC"
-backgroundColor = "#F4F7FC"
-secondaryBackgroundColor = "#E6EDF8"
-textColor = "#1A202C"
-font = "sans serif"
+base                     = "light"
+primaryColor             = "#1565C0"
+backgroundColor          = "#F5F7FA"
+secondaryBackgroundColor = "#E3F2FD"
+textColor                = "#1A237E"
+font                     = "sans serif"
+borderColor              = "#BBDEFB"
+showWidgetBorder         = true
