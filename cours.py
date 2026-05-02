@@ -13,7 +13,6 @@ from database import (
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # ── Instructions spécifiques par matière (niveau global) ─────────
-# Déclaré ici pour être accessible dans generer_contenu ET page_cours
 INSTRUCTIONS_SPECIFIQUES = {
 
     "Algorithmique avancée": """
@@ -278,10 +277,13 @@ NIVEAUX = ["Débutant", "Intermédiaire", "Avancé"]
 def generer_contenu(theme, chapitre, niveau, competence, savoir_faire):
     sf_str = "\n".join([f"- {sf}" for sf in savoir_faire])
 
+    # ── Correction : INSTRUCTIONS_SPECIFIQUES (majuscules) ───────
     if theme == "Algorithmique avancée" and "algorigramme" in chapitre.lower():
-        instruction = instructions_specifiques.get("Algorithmique avancée_algorigramme", "")
+        instruction = INSTRUCTIONS_SPECIFIQUES.get(
+            "Algorithmique avancée_algorigramme", ""
+        )
     else:
-        instruction = instructions_specifiques.get(theme, "")
+        instruction = INSTRUCTIONS_SPECIFIQUES.get(theme, "")
 
     prompt = f"""Tu es un professeur expert en informatique au Cameroun, specialiste APC.
 Redige un cours complet et detaille selon le modele APC pour eleves de 1ere TI, niveau {niveau}.
@@ -380,7 +382,7 @@ Presente une synthese structuree :
         messages=[
             {
                 "role": "system",
-                "content": f"""Tu es un professeur expert en informatique au Cameroun.
+                "content": """Tu es un professeur expert en informatique au Cameroun.
 Tu enseignes en 1ere TI selon le programme officiel camerounais.
 Tu respectes STRICTEMENT les conventions de chaque matiere :
 - Algorithmique : pseudo-code LDA UNIQUEMENT (jamais Python ou autre langage)
@@ -404,11 +406,11 @@ definitions, syntaxe, proprietes et tableau recapitulatif."""
 # ── Quiz APC ──────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def generer_quiz(theme, chapitre, niveau, competence):
-    prompt = f"""Génère un QCM APC pour :
-Matière : {theme} | Chapitre : {chapitre} | Niveau : {niveau}
-Compétence : {competence}
+    prompt = f"""Genere un QCM APC pour :
+Matiere : {theme} | Chapitre : {chapitre} | Niveau : {niveau}
+Competence : {competence}
 
-JSON uniquement :
+JSON uniquement, sans texte avant ou apres :
 {{
   "question": "...",
   "choix": ["A. ...", "B. ...", "C. ...", "D. ..."],
@@ -417,25 +419,40 @@ JSON uniquement :
   "savoir_faire_evalue": "..."
 }}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=400,
-        temperature=0.5
-    )
-    raw = re.sub(r"```json|```", "", response.choices[0].message.content).strip()
-    return json.loads(raw)
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu reponds UNIQUEMENT en JSON valide sans texte avant ou apres."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=400,
+            temperature=0.5
+        )
+        raw = response.choices[0].message.content.strip()
+        raw = re.sub(r"```json|```", "", raw).strip()
+        debut = raw.find("{")
+        fin   = raw.rfind("}") + 1
+        if debut != -1 and fin > debut:
+            raw = raw[debut:fin]
+        return json.loads(raw)
+    except Exception as e:
+        st.warning(f"Quiz indisponible : {e}")
+        return None
 
 
 # ── Diagnostic de niveau ──────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def generer_diagnostic(theme):
-    prompt = f"""Tu es un professeur d'informatique au Cameroun.
-Génère exactement 3 questions QCM de difficulté croissante pour évaluer
-un élève de 1ère TI en {theme}.
+    prompt = f"""Tu es un professeur d informatique au Cameroun.
+Genere exactement 3 questions QCM de difficulte croissante pour evaluer
+un eleve de 1ere TI en {theme}.
 
-Réponds UNIQUEMENT avec du JSON valide, sans texte avant ou après.
-Utilise uniquement des guillemets doubles. Pas d'apostrophes dans les textes.
+Reponds UNIQUEMENT avec du JSON valide, sans texte avant ou apres.
+Utilise uniquement des guillemets doubles. Pas d apostrophes dans les textes.
 Format exact :
 {{
   "questions": [
@@ -474,47 +491,40 @@ Format exact :
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
-            temperature=0.2  # Très bas → JSON plus fiable
+            temperature=0.2
         )
-
         raw = response.choices[0].message.content.strip()
-
-        # Nettoyage robuste
         raw = re.sub(r"```json|```", "", raw).strip()
-
-        # Extraire uniquement le bloc JSON
         debut = raw.find("{")
         fin   = raw.rfind("}") + 1
         if debut != -1 and fin > debut:
             raw = raw[debut:fin]
-
         return json.loads(raw)
 
-    except json.JSONDecodeError as e:
-        # Fallback : questions génériques si JSON invalide
+    except json.JSONDecodeError:
         st.warning("Génération automatique du diagnostic...")
         return {
             "questions": [
                 {
                     "niveau": "Facile",
-                    "question": f"Parmi les éléments suivants, lequel appartient au cours de {theme} ?",
+                    "question": f"Parmi les elements suivants, lequel appartient au cours de {theme} ?",
                     "choix": ["A. Variable", "B. Photoshop", "C. Excel", "D. PowerPoint"],
                     "reponse": "A",
                     "explication": "Une variable est un concept fondamental en programmation."
                 },
                 {
                     "niveau": "Moyen",
-                    "question": f"Quelle structure permet de répéter des instructions en {theme} ?",
+                    "question": f"Quelle structure permet de repeter des instructions en {theme} ?",
                     "choix": ["A. Un tableau", "B. Une boucle", "C. Une couleur", "D. Un fichier"],
                     "reponse": "B",
-                    "explication": "Une boucle permet de répéter des instructions."
+                    "explication": "Une boucle permet de repeter des instructions."
                 },
                 {
                     "niveau": "Difficile",
-                    "question": f"Qu'est-ce qu'une fonction en programmation ?",
-                    "choix": ["A. Un calcul mathématique", "B. Un bloc de code réutilisable", "C. Un type de variable", "D. Une boucle infinie"],
+                    "question": "Qu est-ce qu une fonction en programmation ?",
+                    "choix": ["A. Un calcul mathematique", "B. Un bloc de code reutilisable", "C. Un type de variable", "D. Une boucle infinie"],
                     "reponse": "B",
-                    "explication": "Une fonction est un bloc de code réutilisable qui effectue une tâche précise."
+                    "explication": "Une fonction est un bloc de code reutilisable qui effectue une tache precise."
                 }
             ]
         }
@@ -524,26 +534,34 @@ Format exact :
 
 
 def niveau_depuis_score(score):
-    if score <= 1: return "Débutant"
-    elif score == 2: return "Intermédiaire"
-    else: return "Avancé"
+    if score <= 1:
+        return "Débutant"
+    elif score == 2:
+        return "Intermédiaire"
+    else:
+        return "Avancé"
 
 
-# ── Indicateur de progression d'une matière ───────────────────────
+# ── Indicateur de progression ─────────────────────────────────────
 def afficher_progression(progression, total_chapitres):
-    """Affiche une barre de progression pour la matière."""
-    vus = sum(1 for p in progression if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
+    vus     = sum(1 for p in progression if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
     quiz_ok = sum(1 for p in progression if p.get("quiz_reussi"))
-    pct = round(vus / total_chapitres * 100) if total_chapitres > 0 else 0
+    pct     = round(vus / total_chapitres * 100) if total_chapitres > 0 else 0
 
     st.markdown(
-        f"""<div style='background:#EFF6FF;border-radius:10px;padding:10px 14px;margin-bottom:1rem'>
+        f"""<div style='background:#E3F2FD;border-radius:10px;
+        padding:10px 14px;margin-bottom:1rem'>
         <div style='display:flex;justify-content:space-between;margin-bottom:6px'>
-            <span style='font-size:13px;font-weight:500;color:#1A202C'>Progression</span>
-            <span style='font-size:13px;color:#0D9AFC;font-weight:600'>{vus}/{total_chapitres} chapitres · {quiz_ok} quiz réussis</span>
+            <span style='font-size:13px;font-weight:500;color:#1A237E'>
+                Progression
+            </span>
+            <span style='font-size:13px;color:#1565C0;font-weight:500'>
+                {vus}/{total_chapitres} chapitres · {quiz_ok} quiz réussis
+            </span>
         </div>
-        <div style='background:#D0E4F7;border-radius:4px;height:8px'>
-            <div style='background:#0D9AFC;width:{pct}%;height:100%;border-radius:4px;transition:width .3s'></div>
+        <div style='background:#BBDEFB;border-radius:4px;height:8px'>
+            <div style='background:#1565C0;width:{pct}%;
+            height:100%;border-radius:4px;transition:width .3s'></div>
         </div>
         </div>""",
         unsafe_allow_html=True
@@ -556,7 +574,7 @@ def page_cours():
     eleve    = st.session_state["eleve"]
     eleve_id = eleve["id"]
 
-    # Bouton admin pour vider le cache des cours
+    # Bouton pour vider le cache
     with st.expander("⚙️ Options"):
         if st.button("🔄 Régénérer tous les cours", use_container_width=True):
             generer_contenu.clear()
@@ -568,11 +586,13 @@ def page_cours():
     st.markdown("#### Choisis une matière")
     cols = st.columns(4)
     for i, (theme, data) in enumerate(COURS.items()):
-        # Progression de la matière depuis Supabase
         prog  = get_progression_cours(eleve_id, theme)
         total = len(data["chapitres"])
-        vus   = sum(1 for p in prog if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
-        pct   = round(vus / total * 100) if total > 0 else 0
+        vus   = sum(
+            1 for p in prog
+            if p.get("cours_vu") and p["chapitre"] != "__diagnostic__"
+        )
+        pct = round(vus / total * 100) if total > 0 else 0
 
         if cols[i].button(
             f"{data['icone']} {theme}\n{pct}% vu",
@@ -587,35 +607,33 @@ def page_cours():
         st.info("👆 Choisis une matière pour commencer.")
         return
 
-    theme = st.session_state["cours_theme"]
-    data  = COURS[theme]
+    theme           = st.session_state["cours_theme"]
+    data            = COURS[theme]
     total_chapitres = len(data["chapitres"])
 
     st.divider()
 
-    # ── Progression de la matière ─────────────────────────────────
+    # ── Progression ───────────────────────────────────────────────
     prog = get_progression_cours(eleve_id, theme)
     afficher_progression(prog, total_chapitres)
 
-    # Chapitres déjà vus (pour afficher des coches ✓)
-    chapitres_vus    = {p["chapitre"] for p in prog if p.get("cours_vu")}
+    chapitres_vus     = {p["chapitre"] for p in prog if p.get("cours_vu")}
     chapitres_quiz_ok = {p["chapitre"] for p in prog if p.get("quiz_reussi")}
 
-    # ── DIAGNOSTIC ────────────────────────────────────────────────
-    # Vérifie si le diagnostic a déjà été fait (depuis Supabase)
+    # ── Diagnostic ────────────────────────────────────────────────
     niveau_sauvegarde = get_niveau_detecte(eleve_id, theme)
 
     if not niveau_sauvegarde:
         st.markdown(f"#### {data['icone']} {theme} — Diagnostic de niveau")
-        st.info("Réponds à 3 questions pour que le tuteur adapte le cours à ton niveau réel.")
+        st.info("Réponds à 3 questions pour adapter le cours à ton niveau réel.")
 
         if st.button("🎯 Commencer le diagnostic", use_container_width=True):
             with st.spinner("Préparation..."):
                 try:
                     diag = generer_diagnostic(theme)
-                    st.session_state[f"diag_q_{theme}"]  = diag["questions"]
-                    st.session_state[f"diag_e_{theme}"]  = 0
-                    st.session_state[f"diag_s_{theme}"]  = 0
+                    st.session_state[f"diag_q_{theme}"] = diag["questions"]
+                    st.session_state[f"diag_e_{theme}"] = 0
+                    st.session_state[f"diag_s_{theme}"] = 0
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erreur : {e}")
@@ -628,7 +646,10 @@ def page_cours():
                 q = questions[etape]
                 st.markdown(f"**Question {etape+1}/3 — {q['niveau']}**")
                 st.write(q["question"])
-                choix = st.radio("Ta réponse :", q["choix"], index=None, key=f"dq_{etape}")
+                choix = st.radio(
+                    "Ta réponse :", q["choix"],
+                    index=None, key=f"dq_{etape}"
+                )
 
                 if choix:
                     if choix[0] == q["reponse"]:
@@ -642,11 +663,8 @@ def page_cours():
                         st.session_state[f"diag_e_{theme}"] += 1
                         st.rerun()
             else:
-                # Fin du diagnostic
                 score  = st.session_state.get(f"diag_s_{theme}", 0)
                 niveau = niveau_depuis_score(score)
-
-                # Sauvegarde dans Supabase
                 sauvegarder_diagnostic(eleve_id, theme, score, niveau)
 
                 col1, col2 = st.columns(2)
@@ -664,16 +682,15 @@ def page_cours():
                     st.rerun()
         return
 
-    # ── Chapitres (après diagnostic) ─────────────────────────────
+    # ── Chapitres ─────────────────────────────────────────────────
     st.markdown(f"#### {data['icone']} {theme} — Chapitres")
 
     couleurs = {"Débutant": "🔴", "Intermédiaire": "🟡", "Avancé": "🟢"}
     st.markdown(
-        f"{couleurs.get(niveau_sauvegarde,'🔵')} Ton niveau : **{niveau_sauvegarde}** "
-        f"— Contenu personnalisé activé"
+        f"{couleurs.get(niveau_sauvegarde, '🔵')} Ton niveau : "
+        f"**{niveau_sauvegarde}** — Contenu personnalisé activé"
     )
 
-    # L'élève peut ajuster son niveau manuellement
     niveau = st.select_slider(
         "Ajuster le niveau :",
         options=NIVEAUX,
@@ -682,7 +699,6 @@ def page_cours():
 
     st.divider()
 
-    # Liste des chapitres avec statut
     for j, chap in enumerate(data["chapitres"], 1):
         vu      = chap["titre"] in chapitres_vus
         quiz_ok = chap["titre"] in chapitres_quiz_ok
@@ -701,7 +717,8 @@ def page_cours():
 
         col_desc.markdown(
             f"**{chap['titre']}**  \n"
-            f"<span style='font-size:12px;color:#0D9AFC'>🎯 {chap['competence'][:90]}...</span>",
+            f"<span style='font-size:12px;color:#1565C0'>"
+            f"🎯 {chap['competence'][:90]}...</span>",
             unsafe_allow_html=True
         )
 
@@ -724,10 +741,12 @@ def page_cours():
 
     # Carte compétence APC
     st.markdown(
-        f"""<div style='background:#EFF6FF;border-left:4px solid #0D9AFC;
+        f"""<div style='background:#E3F2FD;border-left:4px solid #1565C0;
         border-radius:8px;padding:12px 16px;margin-bottom:1rem'>
         <strong>🎯 Compétence visée</strong><br>
-        <span style='font-size:14px'>{chap_data['competence']}</span>
+        <span style='font-size:14px;color:#1A237E'>
+            {chap_data['competence']}
+        </span>
         </div>""",
         unsafe_allow_html=True
     )
@@ -735,24 +754,42 @@ def page_cours():
     # Carte savoir-faire
     sf_list = "".join([f"<li>{sf}</li>" for sf in chap_data["savoir_faire"]])
     st.markdown(
-        f"""<div style='background:#F0FFF4;border-left:4px solid #38A169;
+        f"""<div style='background:#E8F5E9;border-left:4px solid #2E7D32;
         border-radius:8px;padding:12px 16px;margin-bottom:1rem'>
         <strong>✅ Savoir-faire à développer</strong>
-        <ul style='margin:8px 0 0 0;font-size:14px'>{sf_list}</ul>
+        <ul style='margin:8px 0 0 0;font-size:14px;color:#1A237E'>
+            {sf_list}
+        </ul>
         </div>""",
         unsafe_allow_html=True
     )
 
-    # Génération du cours APC
+    # Bouton signaler erreur
+    with st.expander("⚠️ Ce cours contient une erreur ?"):
+        type_erreur = st.selectbox(
+            "Type d'erreur :",
+            [
+                "Pseudo-code incorrect",
+                "Algorigramme mal illustré",
+                "Structure APC non respectée",
+                "Contenu incomplet",
+                "Autre erreur"
+            ]
+        )
+        if st.button("📤 Signaler et régénérer", use_container_width=True):
+            generer_contenu.clear()
+            st.session_state.pop("quiz_actuel", None)
+            st.success("Cache vidé — le cours va être régénéré.")
+            st.rerun()
+
+    # Génération du cours
     with st.spinner("Groq génère le cours selon le programme officiel..."):
         contenu = generer_contenu(
             theme, chapitre_titre, niveau_cours,
             chap_data["competence"], chap_data["savoir_faire"]
         )
 
-    # Marquer comme vu dans Supabase
     marquer_cours_vu(eleve_id, theme, chapitre_titre, niveau_cours)
-
     st.markdown(contenu)
 
     # ── Évaluation APC ────────────────────────────────────────────
@@ -762,32 +799,35 @@ def page_cours():
     if "quiz_actuel" not in st.session_state or \
        st.session_state.get("quiz_chapitre") != chapitre_titre:
         with st.spinner("Préparation de l'évaluation..."):
-            try:
-                st.session_state["quiz_actuel"]   = generer_quiz(
-                    theme, chapitre_titre, niveau_cours, chap_data["competence"]
-                )
+            quiz = generer_quiz(
+                theme, chapitre_titre, niveau_cours, chap_data["competence"]
+            )
+            if quiz:
+                st.session_state["quiz_actuel"]   = quiz
                 st.session_state["quiz_chapitre"] = chapitre_titre
                 st.session_state["quiz_repondu"]  = False
-            except Exception as e:
-                st.warning(f"Évaluation indisponible : {e}")
-                return
+            else:
+                st.warning("Évaluation indisponible.")
+                quiz = None
 
-    quiz  = st.session_state["quiz_actuel"]
-    st.write(quiz["question"])
-    st.caption(f"*Savoir-faire évalué : {quiz.get('savoir_faire_evalue', '')}*")
-    choix = st.radio("Ta réponse :", quiz["choix"], index=None)
+    quiz = st.session_state.get("quiz_actuel")
+    if quiz:
+        st.write(quiz["question"])
+        st.caption(
+            f"*Savoir-faire évalué : {quiz.get('savoir_faire_evalue', '')}*"
+        )
+        choix = st.radio("Ta réponse :", quiz["choix"], index=None)
 
-    if choix and not st.session_state.get("quiz_repondu"):
-        if choix[0] == quiz["reponse"]:
-            st.success("Bonne réponse ! Compétence acquise ✅")
-            # Sauvegarder quiz réussi dans Supabase
-            marquer_quiz_reussi(eleve_id, theme, chapitre_titre)
-        else:
-            st.error(f"Pas tout à fait. Réponse correcte : {quiz['reponse']}")
-        st.info(f"**Explication :** {quiz['explication']}")
-        st.session_state["quiz_repondu"] = True
+        if choix and not st.session_state.get("quiz_repondu"):
+            if choix[0] == quiz["reponse"]:
+                st.success("Bonne réponse ! Compétence acquise ✅")
+                marquer_quiz_reussi(eleve_id, theme, chapitre_titre)
+            else:
+                st.error(f"Pas tout à fait. Réponse correcte : {quiz['reponse']}")
+            st.info(f"**Explication :** {quiz['explication']}")
+            st.session_state["quiz_repondu"] = True
 
-    # Navigation
+    # ── Navigation ────────────────────────────────────────────────
     st.divider()
     chapitres_liste = [c["titre"] for c in data["chapitres"]]
     idx = chapitres_liste.index(chapitre_titre)
