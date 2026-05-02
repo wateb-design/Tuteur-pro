@@ -12,6 +12,90 @@ from database import (
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
+# ── Instructions spécifiques par matière (niveau global) ─────────
+# Déclaré ici pour être accessible dans generer_contenu ET page_cours
+INSTRUCTIONS_SPECIFIQUES = {
+
+    "Algorithmique avancée": """
+REGLES STRICTES — Algorithmique :
+- Utilise UNIQUEMENT le pseudo-code LDA (Langage de Description d Algorithme)
+- INTERDIT : Python, C, JavaScript ou tout autre langage de programmation
+- Syntaxe obligatoire :
+  * Debut / Fin
+  * Variable nom : Type  (Types : Entier, Reel, Caractere, Booleen, Chaine)
+  * Constante NOM = valeur
+  * nom <- valeur  (affectation)
+  * Lire(nom)  /  Ecrire(valeur)
+  * Si condition Alors ... Sinon ... FinSi
+  * Selon nom Faire cas1: ... cas2: ... FinSelon
+  * Pour i <- debut A fin Faire ... FinPour
+  * TantQue condition Faire ... FinTantQue
+  * Repeter ... Jusqu A condition
+  * Tableau T[n] : Type
+  * Enregistrement nom ... FinEnregistrement
+  * Fonction nom(params) : TypeRetour ... FinFonction
+  * Procedure nom(params) ... FinProcedure
+- Trace d execution obligatoire pour les exemples
+- Exemple complet avec Debut...Fin""",
+
+    "Algorithmique avancée_algorigramme": """
+REGLES STRICTES — Algorigrammes (symboles officiels programme camerounais) :
+
+SYMBOLES A UTILISER :
++----------------------+------------------------------------------+
+| REPRESENTATION ASCII | DESIGNATION OFFICIELLE                   |
++----------------------+------------------------------------------+
+|  (  DEBUT / FIN  )   | Ovale : debut, fin ou interruption       |
++----------------------+------------------------------------------+
+|  [  traitement   ]   | Rectangle : operation sur donnees        |
++----------------------+------------------------------------------+
+| [| sous-programme|]  | Rectangle double barre : sous-programme  |
++----------------------+------------------------------------------+
+|  /  Lire/Ecrire  /   | Parallelogramme : entree ou sortie       |
++----------------------+------------------------------------------+
+|      /  oui \        | Losange : branchement / decision         |
+|     / condit \       | Sorties : OUI (gauche/bas) NON (droite)  |
+|     \        /       |                                          |
+|      \  non /        |                                          |
++----------------------+------------------------------------------+
+|        O             | Cercle : renvoi / connecteur             |
++----------------------+------------------------------------------+
+|        |             | Ligne de liaison (haut vers bas)         |
+|        v             | Fleche pour cheminement different        |
++----------------------+------------------------------------------+
+
+REGLES DE CONSTRUCTION :
+1. Cheminement de HAUT en BAS, de GAUCHE a DROITE
+2. Toujours commencer par ovale DEBUT et finir par ovale FIN
+3. Entrees/sorties dans le parallelogramme uniquement
+4. Decisions dans le losange uniquement
+5. Sous-programmes dans le rectangle double barre
+- Algorigramme ASCII complet + pseudo-code LDA correspondant
+- Legende des symboles utilises
+- 2 exemples de complexite croissante""",
+
+    "Langage C": """
+REGLES — Langage C :
+- C standard C99 uniquement
+- Toujours inclure les headers (#include <stdio.h> etc.)
+- Fonction main() complete obligatoire
+- Afficher la sortie attendue du programme""",
+
+    "HTML et CSS": """
+REGLES — HTML/CSS :
+- HTML5 (DOCTYPE html)
+- Structure complete de la page toujours presente
+- Exemples concrets camerounais
+- Decrire le rendu visuel attendu""",
+
+    "JavaScript": """
+REGLES — JavaScript :
+- JS moderne integre dans une page HTML complete
+- Montrer l interaction DOM
+- Afficher le resultat attendu dans le navigateur
+- Exemples concrets camerounais"""
+}
+
 # ── Programme officiel 1ère TI ────────────────────────────────────
 COURS = {
     "Algorithmique avancée": {
