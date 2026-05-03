@@ -311,3 +311,275 @@ def sauvegarder_onboarding(eleve_id, scores, recommandation):
                 "recommandation":  recommandation
             }
         )
+
+import json as _json
+
+# ══════════════════════════════════════════════════════════════════
+# COURS CONTENU
+# ══════════════════════════════════════════════════════════════════
+
+def get_cours_contenu(theme, chapitre, niveau):
+    """Récupère le contenu d'un cours depuis Supabase.
+    Retourne None si pas encore généré."""
+    try:
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/cours_contenu",
+            headers=headers(),
+            params={
+                "select":   "contenu",
+                "theme":    f"eq.{theme}",
+                "chapitre": f"eq.{chapitre}",
+                "niveau":   f"eq.{niveau}",
+                "limit":    "1"
+            }
+        )
+        data = res.json()
+        return data[0]["contenu"] if data else None
+    except Exception:
+        return None
+
+def sauvegarder_cours_contenu(theme, chapitre, niveau, contenu):
+    """Sauvegarde le contenu généré par Groq en base.
+    Utilise upsert pour éviter les doublons."""
+    try:
+        h = headers()
+        h["Prefer"] = "resolution=merge-duplicates"
+        requests.post(
+            f"{supabase_url()}/rest/v1/cours_contenu",
+            headers=h,
+            json={
+                "theme":    theme,
+                "chapitre": chapitre,
+                "niveau":   niveau,
+                "contenu":  contenu
+            }
+        )
+    except Exception:
+        pass  # On continue même si la sauvegarde échoue
+
+
+# ══════════════════════════════════════════════════════════════════
+# QUIZ CONTENU
+# ══════════════════════════════════════════════════════════════════
+
+def get_quiz_contenu(theme, chapitre, niveau):
+    """Récupère un quiz depuis Supabase.
+    Retourne None si pas encore généré."""
+    try:
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/quiz_contenu",
+            headers=headers(),
+            params={
+                "select":   "question,choix,reponse,explication,savoir_faire_evalue",
+                "theme":    f"eq.{theme}",
+                "chapitre": f"eq.{chapitre}",
+                "niveau":   f"eq.{niveau}",
+                "limit":    "1"
+            }
+        )
+        data = res.json()
+        if not data:
+            return None
+        row = data[0]
+        # choix est stocké en JSONB → déjà une liste Python
+        choix = row["choix"] if isinstance(row["choix"], list) \
+                else _json.loads(row["choix"])
+        return {
+            "question":            row["question"],
+            "choix":               choix,
+            "reponse":             row["reponse"],
+            "explication":         row["explication"],
+            "savoir_faire_evalue": row.get("savoir_faire_evalue", "")
+        }
+    except Exception:
+        return None
+
+def sauvegarder_quiz_contenu(theme, chapitre, niveau, quiz):
+    """Sauvegarde un quiz généré par Groq en base."""
+    try:
+        h = headers()
+        h["Prefer"] = "resolution=merge-duplicates"
+        requests.post(
+            f"{supabase_url()}/rest/v1/quiz_contenu",
+            headers=h,
+            json={
+                "theme":               theme,
+                "chapitre":            chapitre,
+                "niveau":              niveau,
+                "question":            quiz["question"],
+                "choix":               quiz["choix"],
+                "reponse":             quiz["reponse"],
+                "explication":         quiz.get("explication", ""),
+                "savoir_faire_evalue": quiz.get("savoir_faire_evalue", "")
+            }
+        )
+    except Exception:
+        pass
+
+
+# ══════════════════════════════════════════════════════════════════
+# POOL D'EXERCICES
+# ══════════════════════════════════════════════════════════════════
+
+def get_exercice_pool(theme, chapitre, niveau, type_ex):
+    """Pioche un exercice non encore utilisé dans le pool.
+    Si le pool est épuisé, remet tous les exercices à non-utilisés.
+    Retourne None si aucun exercice disponible."""
+    try:
+        # Cherche un exercice non utilisé
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/exercices_contenu",
+            headers=headers(),
+            params={
+                "select":   "id,titre,description,code_depart,solution,explication",
+                "theme":    f"eq.{theme}",
+                "chapitre": f"eq.{chapitre}",
+                "niveau":   f"eq.{niveau}",
+                "type_ex":  f"eq.{type_ex}",
+                "utilise":  "eq.false",
+                "limit":    "1",
+                "order":    "random()"
+            }
+        )
+        data = res.json()
+
+        if data:
+            # Marquer comme utilisé
+            ex = data[0]
+            requests.patch(
+                f"{supabase_url()}/rest/v1/exercices_contenu",
+                headers=headers(),
+                params={"id": f"eq.{ex['id']}"},
+                json={"utilise": True}
+            )
+            return {
+                "titre":       ex["titre"],
+                "description": ex["description"],
+                "code_depart": ex.get("code_depart", ""),
+                "solution":    ex["solution"],
+                "explication": ex.get("explication", "")
+            }
+
+        # Pool épuisé → remettre à zéro et repioche
+        requests.patch(
+            f"{supabase_url()}/rest/v1/exercices_contenu",
+            headers=headers(),
+            params={
+                "theme":    f"eq.{theme}",
+                "chapitre": f"eq.{chapitre}",
+                "niveau":   f"eq.{niveau}",
+                "type_ex":  f"eq.{type_ex}"
+            },
+            json={"utilise": False}
+        )
+        return None  # Génère un nouveau via Groq
+
+    except Exception:
+        return None
+
+def sauvegarder_exercice_pool(theme, chapitre, niveau, type_ex, exercice):
+    """Ajoute un exercice généré par Groq dans le pool."""
+    try:
+        requests.post(
+            f"{supabase_url()}/rest/v1/exercices_contenu",
+            headers=headers(),
+            json={
+                "theme":       theme,
+                "chapitre":    chapitre,
+                "niveau":      niveau,
+                "type_ex":     type_ex,
+                "titre":       exercice["titre"],
+                "description": exercice["description"],
+                "code_depart": exercice.get("code_depart", ""),
+                "solution":    exercice["solution"],
+                "explication": exercice.get("explication", ""),
+                "utilise":     False
+            }
+        )
+    except Exception:
+        pass
+
+def compter_exercices_pool(theme, chapitre, niveau, type_ex):
+    """Retourne le nombre d'exercices disponibles dans le pool."""
+    try:
+        h = headers()
+        h["Prefer"] = "count=exact"
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/exercices_contenu",
+            headers=h,
+            params={
+                "select":   "id",
+                "theme":    f"eq.{theme}",
+                "chapitre": f"eq.{chapitre}",
+                "niveau":   f"eq.{niveau}",
+                "type_ex":  f"eq.{type_ex}"
+            }
+        )
+        count = int(res.headers.get("Content-Range", "0/0").split("/")[-1])
+        return count
+    except Exception:
+        return 0
+
+
+# ══════════════════════════════════════════════════════════════════
+# QUESTIONS DE DIAGNOSTIC
+# ══════════════════════════════════════════════════════════════════
+
+def get_diagnostic_questions(theme):
+    """Récupère les questions de diagnostic pour une matière.
+    Retourne None si pas encore générées."""
+    try:
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/diagnostic_questions",
+            headers=headers(),
+            params={
+                "select":  "niveau,question,choix,reponse,explication",
+                "theme":   f"eq.{theme}",
+                "order":   "id.asc"
+            }
+        )
+        data = res.json()
+        if not data or len(data) < 3:
+            return None
+        # Reformater pour correspondre au format attendu
+        questions = []
+        for row in data:
+            choix = row["choix"] if isinstance(row["choix"], list) \
+                    else _json.loads(row["choix"])
+            questions.append({
+                "niveau":      row["niveau"],
+                "question":    row["question"],
+                "choix":       choix,
+                "reponse":     row["reponse"],
+                "explication": row["explication"]
+            })
+        return {"questions": questions}
+    except Exception:
+        return None
+
+def sauvegarder_diagnostic_questions(theme, questions):
+    """Sauvegarde les questions de diagnostic en base.
+    Supprime les anciennes avant d'insérer les nouvelles."""
+    try:
+        # Supprimer les anciennes questions pour cette matière
+        requests.delete(
+            f"{supabase_url()}/rest/v1/diagnostic_questions",
+            headers=headers(),
+            params={"theme": f"eq.{theme}"}
+        )
+        # Insérer les nouvelles
+        for q in questions:
+            requests.post(
+                f"{supabase_url()}/rest/v1/diagnostic_questions",
+                headers=headers(),
+                json={
+                    "theme":       theme,
+                    "niveau":      q["niveau"],
+                    "question":    q["question"],
+                    "choix":       q["choix"],
+                    "reponse":     q["reponse"],
+                    "explication": q.get("explication", "")
+                }
+            )
+    except Exception:
+        pass
