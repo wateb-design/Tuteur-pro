@@ -425,6 +425,57 @@ La section Savoirs essentiels doit etre tres detaillee."""
     except Exception as e:
         return f"Erreur de génération : {e}"
 
+# ── Génération quiz avec cache BDD ────────────────────────────────
+def generer_quiz(theme, chapitre, niveau, competence):
+
+    # Étape 1 : chercher en BDD
+    quiz_bdd = get_quiz_contenu(theme, chapitre, niveau)
+    if quiz_bdd:
+        return quiz_bdd
+
+    # Étape 2 : générer avec Groq si absent
+    prompt = f"""Genere un QCM APC pour :
+Matiere : {theme} | Chapitre : {chapitre} | Niveau : {niveau}
+Competence : {competence}
+
+JSON uniquement, sans texte avant ou apres :
+{{
+  "question": "...",
+  "choix": ["A. ...", "B. ...", "C. ...", "D. ..."],
+  "reponse": "A",
+  "explication": "...",
+  "savoir_faire_evalue": "..."
+}}"""
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu reponds UNIQUEMENT en JSON valide sans texte avant ou apres."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=400,
+            temperature=0.5
+        )
+        raw = response.choices[0].message.content.strip()
+        raw = re.sub(r"```json|```", "", raw).strip()
+        debut = raw.find("{")
+        fin   = raw.rfind("}") + 1
+        if debut != -1 and fin > debut:
+            raw = raw[debut:fin]
+        quiz = json.loads(raw)
+
+        # Étape 3 : sauvegarder en BDD
+        sauvegarder_quiz_contenu(theme, chapitre, niveau, quiz)
+        return quiz
+
+    except Exception as e:
+        st.warning(f"Quiz indisponible : {e}")
+        return None
+
 
 # ── Diagnostic de niveau ──────────────────────────────────────────
 @st.cache_data(show_spinner=False)
