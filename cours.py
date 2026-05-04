@@ -7,7 +7,14 @@ from database import (
     get_niveau_detecte,
     marquer_cours_vu,
     marquer_quiz_reussi,
-    get_progression_cours
+    get_progression_cours,
+    # ── Nouvelles fonctions cache BDD ─────────────────────────────
+    get_cours_contenu,
+    sauvegarder_cours_contenu,
+    get_quiz_contenu,
+    sauvegarder_quiz_contenu,
+    get_diagnostic_questions,
+    sauvegarder_diagnostic_questions
 )
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -273,11 +280,19 @@ NIVEAUX = ["Débutant", "Intermédiaire", "Avancé"]
 
 
 # ── Génération contenu APC ────────────────────────────────────────
-@st.cache_data(show_spinner=False)
+# ── Génération contenu APC avec cache BDD ────────────────────────
+# Logique : BDD d'abord → Groq si absent → sauvegarde BDD
+# Avantage : affichage instantané si déjà généré, tokens économisés
 def generer_contenu(theme, chapitre, niveau, competence, savoir_faire):
+
+    # ── Étape 1 : chercher en BDD ─────────────────────────────────
+    contenu_bdd = get_cours_contenu(theme, chapitre, niveau)
+    if contenu_bdd:
+        return contenu_bdd  # Affichage instantané depuis Supabase
+
+    # ── Étape 2 : générer avec Groq si absent ─────────────────────
     sf_str = "\n".join([f"- {sf}" for sf in savoir_faire])
 
-    # ── Correction : INSTRUCTIONS_SPECIFIQUES (majuscules) ───────
     if theme == "Algorithmique avancée" and "algorigramme" in chapitre.lower():
         instruction = INSTRUCTIONS_SPECIFIQUES.get(
             "Algorithmique avancée_algorigramme", ""
@@ -377,12 +392,13 @@ Presente une synthese structuree :
 ### Conseil methode
 (1-2 conseils pratiques pour bien maitriser ce chapitre)"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": """Tu es un professeur expert en informatique au Cameroun.
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Tu es un professeur expert en informatique au Cameroun.
 Tu enseignes en 1ere TI selon le programme officiel camerounais.
 Tu respectes STRICTEMENT les conventions de chaque matiere :
 - Algorithmique : pseudo-code LDA UNIQUEMENT (jamais Python ou autre langage)
@@ -391,57 +407,23 @@ Tu respectes STRICTEMENT les conventions de chaque matiere :
 - HTML/CSS : HTML5 avec structure complete
 - JavaScript : JS moderne integre dans HTML
 Tu structures tes cours selon le modele APC sans jamais inclure
-de sections "exercices guides" ou "savoir-faire a toi de jouer".
-La section Savoirs essentiels doit etre tres detaillee avec
-definitions, syntaxe, proprietes et tableau recapitulatif."""
-            },
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=2000,
-        temperature=0.3
-    )
-    return response.choices[0].message.content
-
-
-# ── Quiz APC ──────────────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
-def generer_quiz(theme, chapitre, niveau, competence):
-    prompt = f"""Genere un QCM APC pour :
-Matiere : {theme} | Chapitre : {chapitre} | Niveau : {niveau}
-Competence : {competence}
-
-JSON uniquement, sans texte avant ou apres :
-{{
-  "question": "...",
-  "choix": ["A. ...", "B. ...", "C. ...", "D. ..."],
-  "reponse": "A",
-  "explication": "...",
-  "savoir_faire_evalue": "..."
-}}"""
-
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Tu reponds UNIQUEMENT en JSON valide sans texte avant ou apres."
+de sections exercices guides ou savoir-faire a toi de jouer.
+La section Savoirs essentiels doit etre tres detaillee."""
                 },
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=400,
-            temperature=0.5
+            max_tokens=2000,
+            temperature=0.3
         )
-        raw = response.choices[0].message.content.strip()
-        raw = re.sub(r"```json|```", "", raw).strip()
-        debut = raw.find("{")
-        fin   = raw.rfind("}") + 1
-        if debut != -1 and fin > debut:
-            raw = raw[debut:fin]
-        return json.loads(raw)
+        contenu = response.choices[0].message.content
+
+        # ── Étape 3 : sauvegarder en BDD pour les prochains appels ──
+        sauvegarder_cours_contenu(theme, chapitre, niveau, contenu)
+
+        return contenu
+
     except Exception as e:
-        st.warning(f"Quiz indisponible : {e}")
-        return None
+        return f"Erreur de génération : {e}"
 
 
 # ── Diagnostic de niveau ──────────────────────────────────────────
