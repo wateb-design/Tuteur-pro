@@ -914,7 +914,7 @@ def page_cours():
             ]
         )
         if st.button("📤 Signaler et régénérer", use_container_width=True):
-            generer_contenu.clear()
+    #       # generer_contenu.clear()
             st.session_state.pop("quiz_actuel", None)
             st.success("Cache vidé — le cours va être régénéré.")
             st.rerun()
@@ -954,7 +954,7 @@ def page_cours():
             f"*Savoir-faire évalué : {quiz.get('savoir_faire_evalue', '')}*"
         )
         choix = st.radio("Ta réponse :", quiz["choix"], index=None)
-
+       
         if choix and not st.session_state.get("quiz_repondu"):
             if choix[0] == quiz["reponse"]:
                 st.success("Bonne réponse ! Compétence acquise ✅")
