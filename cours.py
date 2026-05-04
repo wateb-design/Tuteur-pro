@@ -557,11 +557,125 @@ def page_cours():
     eleve_id = eleve["id"]
 
     # Bouton pour vider le cache
-    with st.expander("⚙️ Options"):
-        if st.button("🔄 Régénérer tous les cours", use_container_width=True):
-            generer_contenu.clear()
-            generer_quiz.clear()
-            st.success("Cache vidé — les cours seront régénérés.")
+    # ── Options admin ─────────────────────────────────────────────────
+# Seul l'admin peut régénérer les cours.
+# Le mot de passe est stocké dans les secrets Streamlit — jamais en dur.
+with st.expander("⚙️ Options admin"):
+
+    # Initialisation de l'état d'authentification admin
+    if "admin_auth" not in st.session_state:
+        st.session_state["admin_auth"] = False
+
+    # Si pas encore authentifié → formulaire de mot de passe
+    if not st.session_state["admin_auth"]:
+        st.caption("Accès réservé à l'administrateur.")
+        mdp = st.text_input(
+            "Mot de passe admin :",
+            type="password",
+            key="mdp_admin_input"
+        )
+        if st.button("🔐 Valider", use_container_width=True):
+            if mdp == st.secrets.get("ADMIN_PASSWORD", ""):
+                st.session_state["admin_auth"] = True
+                st.success("Accès admin accordé ✅")
+                st.rerun()
+            else:
+                st.error("Mot de passe incorrect.")
+
+    # Si authentifié → afficher les options de régénération
+    else:
+        st.caption(
+            "Connecté en tant qu'admin. "
+            "Les cours supprimés seront régénérés à la prochaine ouverture."
+        )
+
+        col1, col2 = st.columns(2)
+
+        # ── Régénérer le chapitre en cours ────────────────────────
+        chapitre_actuel = st.session_state.get("cours_chapitre")
+        theme_actuel    = st.session_state.get("cours_theme")
+        niveau_actuel   = st.session_state.get("cours_niveau", "Débutant")
+
+        if col1.button(
+            "🔄 Ce chapitre",
+            use_container_width=True,
+            disabled=not chapitre_actuel
+        ):
+            import requests as req
+            from database import supabase_url, headers
+            try:
+                for table in ["cours_contenu", "quiz_contenu"]:
+                    req.delete(
+                        f"{supabase_url()}/rest/v1/{table}",
+                        headers=headers(),
+                        params={
+                            "theme":    f"eq.{theme_actuel}",
+                            "chapitre": f"eq.{chapitre_actuel}",
+                            "niveau":   f"eq.{niveau_actuel}"
+                        }
+                    )
+                st.success(
+                    f"Chapitre '{chapitre_actuel}' supprimé "
+                    f"— sera régénéré à l'ouverture."
+                )
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur : {e}")
+
+        # ── Régénérer toute la matière ────────────────────────────
+        if col2.button(
+            "🗑️ Toute la matière",
+            use_container_width=True,
+            disabled=not theme_actuel
+        ):
+            import requests as req
+            from database import supabase_url, headers
+            try:
+                for table in ["cours_contenu", "quiz_contenu"]:
+                    req.delete(
+                        f"{supabase_url()}/rest/v1/{table}",
+                        headers=headers(),
+                        params={"theme": f"eq.{theme_actuel}"}
+                    )
+                st.success(
+                    f"Matière '{theme_actuel}' supprimée "
+                    f"— sera régénérée à l'ouverture."
+                )
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur : {e}")
+
+        # ── Régénérer tous les cours ──────────────────────────────
+        st.divider()
+        st.warning("⚠️ Action irréversible — supprime tous les cours générés.")
+
+        # Double confirmation pour éviter les accidents
+        confirmation = st.text_input(
+            "Tapez CONFIRMER pour supprimer tous les cours :",
+            key="confirm_delete_all"
+        )
+        if st.button(
+            "💣 Tout supprimer",
+            use_container_width=True,
+            disabled=confirmation != "CONFIRMER"
+        ):
+            import requests as req
+            from database import supabase_url, headers
+            try:
+                for table in ["cours_contenu", "quiz_contenu"]:
+                    req.delete(
+                        f"{supabase_url()}/rest/v1/{table}",
+                        headers=headers()
+                    )
+                st.success("Tous les cours supprimés — seront régénérés.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur : {e}")
+
+        # ── Déconnexion admin ─────────────────────────────────────
+        st.divider()
+        if st.button("🚪 Déconnexion admin", use_container_width=True):
+            st.session_state["admin_auth"] = False
             st.rerun()
 
     # ── Sélection de la matière ───────────────────────────────────
