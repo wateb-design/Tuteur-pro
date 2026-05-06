@@ -435,7 +435,11 @@ def page_exercices():
                 else:
                     st.error(feedback)
                     # Affiche la solution correcte si raté
-                    with st.expander("📖 Voir la solution correcte"):
+                    email_connecte  = st.session_state["eleve"].get("email", "")
+                    email_admin     = st.secrets.get("ADMIN_EMAIL", "")
+                    est_admin       = email_connecte == email_admin                    
+                    if est_admin:
+                        with st.expander("⚙️ Options admin"):                    
                         st.markdown("**Solution :**")
                         st.code(ex["solution"], language=lang)
                         if ex.get("explication"):
