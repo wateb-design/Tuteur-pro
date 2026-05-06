@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import json as _json
 
 # ── Helpers REST Supabase ─────────────────────────────────────────
 # On appelle l'API REST Supabase directement avec requests.
@@ -311,8 +312,6 @@ def sauvegarder_onboarding(eleve_id, scores, recommandation):
                 "recommandation":  recommandation
             }
         )
-
-import json as _json
 
 # ══════════════════════════════════════════════════════════════════
 # COURS CONTENU
