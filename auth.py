@@ -81,7 +81,7 @@ def page_auth():
     col_vide, col_form, col_vide2 = st.columns([1, 2, 1])
 
     with col_form:
-        st.title("🤖 Tuteur IA")
+        st.title("🤖 Tuteur-pro")
         st.markdown("##### Programmation · 1ère TI")
         st.divider()
 
