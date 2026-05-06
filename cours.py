@@ -609,6 +609,11 @@ def page_cours():
 
     # ── Options admin ─────────────────────────────────────────────
     with st.expander("⚙️ Options admin"):
+        email_connecte  = st.session_state["eleve"].get("email", "")
+        email_admin     = st.secrets.get("ADMIN_EMAIL", "")
+        est_admin       = email_connecte == email_admin
+        if est_admin:
+            with st.expander("⚙️ Options admin"):
 
         if "admin_auth" not in st.session_state:
             st.session_state["admin_auth"] = False
