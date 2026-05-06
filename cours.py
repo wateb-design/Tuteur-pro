@@ -615,8 +615,8 @@ def page_cours():
         if est_admin:
             with st.expander("⚙️ Options admin"):
 
-        if "admin_auth" not in st.session_state:
-            st.session_state["admin_auth"] = False
+                if "admin_auth" not in st.session_state:
+                    st.session_state["admin_auth"] = False
 
         if not st.session_state["admin_auth"]:
             st.caption("Accès réservé à l'administrateur.")
