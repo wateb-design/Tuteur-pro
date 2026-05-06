@@ -7,12 +7,12 @@ import requests
 def supabase_url():
     return st.secrets["SUPABASE_URL"].rstrip("/")
 
-def headers():
+def headers(prefer="return=representation"):
     return {
         "apikey":        st.secrets["SUPABASE_KEY"],
         "Authorization": f"Bearer {st.secrets['SUPABASE_KEY']}",
         "Content-Type":  "application/json",
-        "Prefer":        "return=representation"
+        "Prefer":        prefer
     }
 
 def init_db():
@@ -342,8 +342,7 @@ def sauvegarder_cours_contenu(theme, chapitre, niveau, contenu):
     """Sauvegarde le contenu généré par Groq en base.
     Utilise upsert pour éviter les doublons."""
     try:
-        h = headers()
-        h["Prefer"] = "resolution=merge-duplicates"
+       h = headers(prefer="resolution=merge-duplicates,return=representation")
         requests.post(
             f"{supabase_url()}/rest/v1/cours_contenu",
             headers=h,
@@ -397,8 +396,7 @@ def get_quiz_contenu(theme, chapitre, niveau):
 def sauvegarder_quiz_contenu(theme, chapitre, niveau, quiz):
     """Sauvegarde un quiz généré par Groq en base."""
     try:
-        h = headers()
-        h["Prefer"] = "resolution=merge-duplicates"
+       h = headers(prefer="resolution=merge-duplicates,return=representation")
         requests.post(
             f"{supabase_url()}/rest/v1/quiz_contenu",
             headers=h,
@@ -421,12 +419,10 @@ def sauvegarder_quiz_contenu(theme, chapitre, niveau, quiz):
 # POOL D'EXERCICES
 # ══════════════════════════════════════════════════════════════════
 
+# Remplacez get_exercice_pool par cette version corrigée :
+
 def get_exercice_pool(theme, chapitre, niveau, type_ex):
-    """Pioche un exercice non encore utilisé dans le pool.
-    Si le pool est épuisé, remet tous les exercices à non-utilisés.
-    Retourne None si aucun exercice disponible."""
     try:
-        # Cherche un exercice non utilisé
         res = requests.get(
             f"{supabase_url()}/rest/v1/exercices_contenu",
             headers=headers(),
@@ -437,15 +433,14 @@ def get_exercice_pool(theme, chapitre, niveau, type_ex):
                 "niveau":   f"eq.{niveau}",
                 "type_ex":  f"eq.{type_ex}",
                 "utilise":  "eq.false",
-                "limit":    "1",
-                "order":    "random()"
+                "limit":    "5"  # ← on prend 5 puis on pioche aléatoirement en Python
             }
         )
         data = res.json()
 
         if data:
-            # Marquer comme utilisé
-            ex = data[0]
+            import random
+            ex = random.choice(data)  # ← aléatoire côté Python
             requests.patch(
                 f"{supabase_url()}/rest/v1/exercices_contenu",
                 headers=headers(),
@@ -460,7 +455,7 @@ def get_exercice_pool(theme, chapitre, niveau, type_ex):
                 "explication": ex.get("explication", "")
             }
 
-        # Pool épuisé → remettre à zéro et repioche
+        # Pool épuisé → reset
         requests.patch(
             f"{supabase_url()}/rest/v1/exercices_contenu",
             headers=headers(),
@@ -472,7 +467,7 @@ def get_exercice_pool(theme, chapitre, niveau, type_ex):
             },
             json={"utilise": False}
         )
-        return None  # Génère un nouveau via Groq
+        return None
 
     except Exception:
         return None
