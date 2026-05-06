@@ -902,17 +902,22 @@ def page_cours():
     )
 
     # Bouton signaler erreur
-    with st.expander("⚠️ Ce cours contient une erreur ?"):
-        type_erreur = st.selectbox(
-            "Type d'erreur :",
-            [
-                "Pseudo-code incorrect",
-                "Algorigramme mal illustré",
-                "Structure APC non respectée",
-                "Contenu incomplet",
-                "Autre erreur"
-            ]
-        )
+    email_connecte  = st.session_state["eleve"].get("email", "")
+    email_admin     = st.secrets.get("ADMIN_EMAIL", "")
+    est_admin       = email_connecte == email_admin
+
+    if est_admin:
+        with st.expander("⚙️ Options admin"):
+            type_erreur = st.selectbox(
+                "Type d'erreur :",
+                [
+                    "Pseudo-code incorrect",
+                    "Algorigramme mal illustré",
+                    "Structure APC non respectée",
+                    "Contenu incomplet",
+                    "Autre erreur"
+                ]
+            )
         if st.button("📤 Signaler et régénérer", use_container_width=True):
     #       # generer_contenu.clear()
             st.session_state.pop("quiz_actuel", None)
