@@ -395,7 +395,7 @@ def get_quiz_contenu(theme, chapitre, niveau):
 def sauvegarder_quiz_contenu(theme, chapitre, niveau, quiz):
     """Sauvegarde un quiz généré par Groq en base."""
     try:
-       h = headers(prefer="resolution=merge-duplicates,return=representation")
+        h = headers(prefer="resolution=merge-duplicates,return=representation")
         requests.post(
             f"{supabase_url()}/rest/v1/quiz_contenu",
             headers=h,
