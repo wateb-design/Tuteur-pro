@@ -341,7 +341,7 @@ def sauvegarder_cours_contenu(theme, chapitre, niveau, contenu):
     """Sauvegarde le contenu généré par Groq en base.
     Utilise upsert pour éviter les doublons."""
     try:
-       h = headers(prefer="resolution=merge-duplicates,return=representation")
+        h = headers(prefer="resolution=merge-duplicates,return=representation")
         requests.post(
             f"{supabase_url()}/rest/v1/cours_contenu",
             headers=h,
