@@ -34,13 +34,13 @@ def connecter(email, password):
     pwd_hash = hash_password(password)
     
     # Debug temporaire — à supprimer après
-    st.write("Email saisi :", email)
-    st.write("Hash généré :", pwd_hash[:20], "...")
+    #st.write("Email saisi :", email)
+    #st.write("Hash généré :", pwd_hash[:20], "...")
     
     row = get_eleve_par_email(email, pwd_hash)
     
     # Debug temporaire
-    st.write("Résultat BDD :", row)
+    #st.write("Résultat BDD :", row)
     
     if row:
         return True, {"id": row[0], "prenom": row[1], "email": email}
