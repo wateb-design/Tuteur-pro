@@ -440,10 +440,10 @@ def page_exercices():
                     est_admin       = email_connecte == email_admin                    
                     if est_admin:
                         with st.expander("⚙️ Options admin"):                    
-                        st.markdown("**Solution :**")
-                        st.code(ex["solution"], language=lang)
-                        if ex.get("explication"):
-                            st.info(f"**Explication :** {ex['explication']}")
+                            st.markdown("**Solution :**")
+                            st.code(ex["solution"], language=lang)
+                            if ex.get("explication"):
+                                st.info(f"**Explication :** {ex['explication']}")
 
                 inserer_resultat(
                     eleve_id=eleve["id"],
