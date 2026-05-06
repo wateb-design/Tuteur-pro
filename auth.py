@@ -30,9 +30,19 @@ def creer_compte(prenom, email, password):
 def connecter(email, password):
     if not email or not password:
         return False, None
-    row = get_eleve_par_email(email, hash_password(password))
+    
+    pwd_hash = hash_password(password)
+    
+    # Debug temporaire — à supprimer après
+    st.write("Email saisi :", email)
+    st.write("Hash généré :", pwd_hash[:20], "...")
+    
+    row = get_eleve_par_email(email, pwd_hash)
+    
+    # Debug temporaire
+    st.write("Résultat BDD :", row)
+    
     if row:
-        # email ajouté ici
         return True, {"id": row[0], "prenom": row[1], "email": email}
     return False, None
 
