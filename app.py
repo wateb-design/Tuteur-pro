@@ -23,9 +23,14 @@ if "eleve" not in st.session_state:
     page_auth()
     st.stop()
 
+
+eleve = st.session_state["eleve"]
+st.write("Email session :", eleve.get("email", "NON TROUVÉ"))
+st.write("Email admin secrets :", st.secrets.get("ADMIN_EMAIL", "NON DÉFINI"))
 # eleve est maintenant défini — toutes les lignes suivantes peuvent l'utiliser
 eleve    = st.session_state["eleve"]
 eleve_id = eleve["id"]
+
 
 # ── Garde 2 : onboarding ──────────────────────────────────────────
 # On utilise eleve_id défini juste au-dessus
