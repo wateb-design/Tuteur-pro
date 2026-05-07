@@ -7,6 +7,7 @@ from progression import page_progression
 from chat import page_chat
 from style import inject_css
 from onboarding import page_onboarding
+from enseignant import page_connexion_enseignant, page_enseignant
 
 # ── Configuration ─────────────────────────────────────────────────
 st.set_page_config(
@@ -17,6 +18,26 @@ st.set_page_config(
 inject_css()
 init_db()
 
+# ── Espace enseignant ─────────────────────────────────────────────
+# Accessible via ?mode=enseignant dans l'URL ou bouton dédié
+if "enseignant" in st.session_state:
+    page_enseignant()
+    st.stop()
+
+# Bouton discret dans la sidebar pour accéder à l'espace enseignant
+with st.sidebar:
+    if st.button("👨‍🏫 Espace enseignant", use_container_width=False):
+        st.session_state["mode_enseignant"] = True
+        st.rerun()
+
+if st.session_state.get("mode_enseignant") and \
+   "enseignant" not in st.session_state:
+    page_connexion_enseignant()
+    if st.button("← Retour élève"):
+        st.session_state.pop("mode_enseignant", None)
+        st.rerun()
+    st.stop()
+       
 # ── Garde 1 : authentification ────────────────────────────────────
 # eleve n'existe pas encore ici — on vérifie d'abord la session
 if "eleve" not in st.session_state:
