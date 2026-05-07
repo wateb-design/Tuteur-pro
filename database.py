@@ -577,3 +577,107 @@ def sauvegarder_diagnostic_questions(theme, questions):
             )
     except Exception:
         pass
+
+# ══════════════════════════════════════════════════════════════════
+# ENSEIGNANTS
+# ══════════════════════════════════════════════════════════════════
+
+def inserer_enseignant(nom, email, password_hash):
+    try:
+        res = requests.post(
+            f"{supabase_url()}/rest/v1/enseignants",
+            headers=headers(),
+            json={
+                "nom":          nom,
+                "email":        email,
+                "mot_de_passe": password_hash
+            }
+        )
+        return res.status_code in [200, 201]
+    except Exception:
+        return False
+
+def get_enseignant_par_email(email, password_hash):
+    if not email or not password_hash:
+        return None
+    try:
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/enseignants",
+            headers=headers(),
+            params={
+                "select":        "id,nom",
+                "email":         f"eq.{email}",
+                "mot_de_passe":  f"eq.{password_hash}"
+            }
+        )
+        data = res.json()
+        if data:
+            return data[0]["id"], data[0]["nom"]
+        return None
+    except Exception:
+        return None
+
+def get_tous_eleves():
+    """Récupère la liste de tous les élèves."""
+    try:
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/eleves",
+            headers=headers(),
+            params={
+                "select": "id,prenom,email,date",
+                "order":  "prenom.asc"
+            }
+        )
+        return res.json()
+    except Exception:
+        return []
+
+def get_stats_globales():
+    """Statistiques globales pour le tableau de bord enseignant."""
+    try:
+        eleves = get_tous_eleves()
+        res = requests.get(
+            f"{supabase_url()}/rest/v1/resultats",
+            headers=headers(),
+            params={"select": "eleve_id,reussi,theme,niveau,date"}
+        )
+        resultats = res.json()
+        return eleves, resultats
+    except Exception:
+        return [], []
+
+def get_progression_complete_eleve(eleve_id):
+    """Récupère toute la progression d'un élève spécifique."""
+    try:
+        res_cours = requests.get(
+            f"{supabase_url()}/rest/v1/progression_cours",
+            headers=headers(),
+            params={
+                "select":   "theme,chapitre,cours_vu,quiz_reussi,niveau_detecte,date_debut",
+                "eleve_id": f"eq.{eleve_id}",
+                "order":    "date_debut.asc"
+            }
+        )
+        res_ex = requests.get(
+            f"{supabase_url()}/rest/v1/progression_exercices",
+            headers=headers(),
+            params={
+                "select":   "*",
+                "eleve_id": f"eq.{eleve_id}"
+            }
+        )
+        res_ob = requests.get(
+            f"{supabase_url()}/rest/v1/onboarding",
+            headers=headers(),
+            params={
+                "select":   "scores,recommandation,date",
+                "eleve_id": f"eq.{eleve_id}"
+            }
+        )
+        return {
+            "cours":      res_cours.json(),
+            "exercices":  res_ex.json(),
+            "onboarding": res_ob.json()[0] if res_ob.json() else None
+        }
+    except Exception:
+        return {"cours": [], "exercices": [], "onboarding": None}
