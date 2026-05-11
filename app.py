@@ -1,4 +1,31 @@
 import streamlit as st
+st.write("APP CHARGÉE")  # ligne de debug temporaire
+
+import traceback
+try:
+    from database import init_db, get_onboarding, get_stats_eleve
+    st.write("✅ database OK")
+    from auth import page_auth, deconnecter
+    st.write("✅ auth OK")
+    from style import inject_css
+    st.write("✅ style OK")
+    from onboarding import page_onboarding
+    st.write("✅ onboarding OK")
+    from cours import page_cours
+    st.write("✅ cours OK")
+    from Exercices import page_exercices
+    st.write("✅ Exercices OK")
+    from progression import page_progression
+    st.write("✅ progression OK")
+    from chat import page_chat
+    st.write("✅ chat OK")
+    from enseignant import page_connexion_enseignant, page_enseignant
+    st.write("✅ enseignant OK")
+except Exception as e:
+    st.error(f"ERREUR : {e}")
+    st.code(traceback.format_exc())
+    st.stop()
+    
 from database import init_db, get_onboarding, get_stats_eleve
 from auth import page_auth, deconnecter
 from Exercices import page_exercices
@@ -10,19 +37,7 @@ from onboarding import page_onboarding
 from enseignant import page_connexion_enseignant, page_enseignant
 from cours_data import COURS
 
-import traceback
-
-try:
-    from cours import page_cours
-    from Exercices import page_exercices
-    from progression import page_progression
-    from chat import page_chat
-    from enseignant import page_connexion_enseignant, page_enseignant
-except Exception as e:
-    st.error(f"Erreur d'import : {e}")
-    st.code(traceback.format_exc())
-    st.stop()
-    
+ 
 # ── Configuration ─────────────────────────────────────────────────
 st.set_page_config(
     page_title="Tuteur Pro — Programmation",
