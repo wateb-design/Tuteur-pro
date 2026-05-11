@@ -18,7 +18,7 @@ from database import (
     get_exercice_pool,
     sauvegarder_exercice_pool
 )
-from cours import COURS
+from cours_data import COURS
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
