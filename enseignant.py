@@ -52,10 +52,10 @@ def page_connexion_enseignant():
 
         onglet = st.radio("", ["Connexion", "Créer un compte"], horizontal=True)
 
+        # ── Onglet Connexion ──────────────────────────────────
         if onglet == "Connexion":
             email    = st.text_input("Email", placeholder="votre@email.com")
             password = st.text_input("Mot de passe", type="password")
-
             if st.button("Se connecter", use_container_width=True, type="primary"):
                 if not email or not password:
                     st.warning("Remplis tous les champs.")
@@ -68,25 +68,85 @@ def page_connexion_enseignant():
                     else:
                         st.error("Email ou mot de passe incorrect.")
 
+        # ── Onglet Créer un compte ────────────────────────────
         else:
-            nom      = st.text_input("Nom complet")
-            email    = st.text_input("Email", placeholder="votre@email.com")
-            password  = st.text_input("Mot de passe", type="password")
-            password2 = st.text_input("Confirmer", type="password")
+            CLE_VALIDE = st.secrets.get("CLE_INSCRIPTION_ENSEIGNANT", "")
 
-            if st.button("Créer mon compte", use_container_width=True, type="primary"):
-                if not nom or not email or not password:
-                    st.warning("Remplis tous les champs.")
-                elif password != password2:
-                    st.error("Les mots de passe ne correspondent pas.")
-                elif len(password) < 6:
-                    st.warning("Mot de passe trop court (6 caractères min).")
-                else:
-                    ok = inserer_enseignant(nom, email, hash_password(password))
-                    if ok:
-                        st.success("Compte créé ! Connectez-vous.")
+            # ── Étape A : clé non encore validée ─────────────
+            if not st.session_state.get("cle_enseignant_ok", False):
+
+                st.markdown(
+                    """<div style='background:#E3F2FD;
+                    border-left:3px solid #1565C0;
+                    border-radius:8px;padding:10px 14px;
+                    font-size:13px;color:#1A237E;margin-bottom:1rem'>
+                    🔐 La création d'un compte enseignant nécessite
+                    une <strong>clé d'inscription</strong>
+                    fournie par l'administrateur.
+                    </div>""",
+                    unsafe_allow_html=True
+                )
+
+                cle_saisie = st.text_input(
+                    "Clé d'inscription :",
+                    type="password",
+                    placeholder="Saisissez la clé fournie par l'admin"
+                )
+
+                if st.button("Valider la clé", use_container_width=True):
+                    if not cle_saisie:
+                        st.warning("Saisissez la clé.")
+                    elif cle_saisie == CLE_VALIDE:
+                        st.session_state["cle_enseignant_ok"] = True
+                        st.rerun()
                     else:
-                        st.error("Cet email est déjà utilisé.")
+                        st.error("Clé incorrecte. Contactez l'administrateur.")
+
+            # ── Étape B : clé validée → formulaire visible ────
+            else:
+                st.markdown(
+                    """<div style='background:#E8F5E9;
+                    border-left:3px solid #2E7D32;
+                    border-radius:8px;padding:8px 12px;
+                    font-size:13px;color:#1B5E20;margin-bottom:1rem'>
+                    ✅ Clé validée — Complétez votre inscription.
+                    </div>""",
+                    unsafe_allow_html=True
+                )
+
+                nom       = st.text_input("Nom complet")
+                email     = st.text_input("Email", placeholder="votre@email.com")
+                password  = st.text_input("Mot de passe", type="password")
+                password2 = st.text_input("Confirmer le mot de passe", type="password")
+
+                if st.button(
+                    "Créer mon compte",
+                    use_container_width=True,
+                    type="primary"
+                ):
+                    if not nom or not email or not password:
+                        st.warning("Remplis tous les champs.")
+                    elif password != password2:
+                        st.error("Les mots de passe ne correspondent pas.")
+                    elif len(password) < 6:
+                        st.warning("Mot de passe trop court (6 caractères min).")
+                    else:
+                        ok = inserer_enseignant(
+                            nom, email, hash_password(password)
+                        )
+                        if ok:
+                            st.success("Compte créé ! Connectez-vous.")
+                            st.session_state.pop("cle_enseignant_ok", None)
+                        else:
+                            st.error("Cet email est déjà utilisé.")
+
+                # Lien pour annuler et ressaisir la clé
+                if st.button(
+                    "← Ressaisir la clé",
+                    use_container_width=True
+                ):
+                    st.session_state.pop("cle_enseignant_ok", None)
+                    st.rerun()
 
 
 # ── Barre de progression visuelle ────────────────────────────────
