@@ -10,18 +10,6 @@ from onboarding import page_onboarding
 from enseignant import page_connexion_enseignant, page_enseignant
 from cours_data import COURS
 
-import streamlit as st
-from database import init_db, get_onboarding, get_stats_eleve
-from auth import page_auth, deconnecter
-from Exercices import page_exercices
-from cours import page_cours
-from progression import page_progression
-from chat import page_chat
-from style import inject_css
-from onboarding import page_onboarding
-from enseignant import page_connexion_enseignant, page_enseignant
-from cours_data import COURS
-
 # ⚠️ AJOUTEZ CES 3 LIGNES ICI ⚠️
 import sys
 print(f"[DEBUG] app.py chargé - COURS disponible: {len(COURS)} matières", file=sys.stderr)
