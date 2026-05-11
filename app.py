@@ -10,11 +10,19 @@ from onboarding import page_onboarding
 from enseignant import page_connexion_enseignant, page_enseignant
 from cours_data import COURS
 
-# ⚠️ AJOUTEZ CES 3 LIGNES ICI ⚠️
-import sys
-print(f"[DEBUG] app.py chargé - COURS disponible: {len(COURS)} matières", file=sys.stderr)
-sys.stderr.flush()
+import traceback
 
+try:
+    from cours import page_cours
+    from Exercices import page_exercices
+    from progression import page_progression
+    from chat import page_chat
+    from enseignant import page_connexion_enseignant, page_enseignant
+except Exception as e:
+    st.error(f"Erreur d'import : {e}")
+    st.code(traceback.format_exc())
+    st.stop()
+    
 # ── Configuration ─────────────────────────────────────────────────
 st.set_page_config(
     page_title="Tuteur Pro — Programmation",
