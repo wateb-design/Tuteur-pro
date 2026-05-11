@@ -8,6 +8,7 @@ from chat import page_chat
 from style import inject_css
 from onboarding import page_onboarding
 from enseignant import page_connexion_enseignant, page_enseignant
+from cours_data import COURS
 
 # ── Configuration ─────────────────────────────────────────────────
 st.set_page_config(
@@ -92,7 +93,6 @@ if page == "🏠 Accueil":
 
     # ===== Récupération des stats RÉELLES des cours =====
     from database import get_progression_cours, get_niveau_detecte
-    from cours_data import COURS  # Import depuis cours_data
     
     # Initialiser les compteurs
     total_chapitres = 0
