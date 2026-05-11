@@ -90,9 +90,9 @@ if page == "🏠 Accueil":
     st.markdown("Améliore tes performances en informatique · 1ère TI")
     st.divider()
 
-    # ===== NOUVEAU : Récupération des stats RÉELLES des cours =====
+    # ===== Récupération des stats RÉELLES des cours =====
     from database import get_progression_cours, get_niveau_detecte
-    from cours_data import COURS  # Import direct depuis cours_data
+    from cours_data import COURS  # Import depuis cours_data
     
     # Initialiser les compteurs
     total_chapitres = 0
@@ -287,7 +287,7 @@ if page == "🏠 Accueil":
         st.session_state["page"] = "💬 Assistant"
         st.rerun()
 
-    # Ajoutez ceci juste après avoir récupéré les stats
+    # ⚠️ METTEZ LE BLOC DEBUG ICI (à l'intérieur du if, tout à la fin)
     with st.expander("🔍 Debug - Voir les données brutes"):
         st.write("Progression par matière:", progression_par_matiere)
         st.write("Total chapitres:", total_chapitres)
