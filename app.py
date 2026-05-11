@@ -1,32 +1,5 @@
 import streamlit as st
-st.write("APP CHARGÉE")  # ligne de debug temporaire
-
-import traceback
-try:
-    from database import init_db, get_onboarding, get_stats_eleve
-    st.write("✅ database OK")
-    from auth import page_auth, deconnecter
-    st.write("✅ auth OK")
-    from style import inject_css
-    st.write("✅ style OK")
-    from onboarding import page_onboarding
-    st.write("✅ onboarding OK")
-    from cours import page_cours
-    st.write("✅ cours OK")
-    from Exercices import page_exercices
-    st.write("✅ Exercices OK")
-    from progression import page_progression
-    st.write("✅ progression OK")
-    from chat import page_chat
-    st.write("✅ chat OK")
-    from enseignant import page_connexion_enseignant, page_enseignant
-    st.write("✅ enseignant OK")
-except Exception as e:
-    st.error(f"ERREUR : {e}")
-    st.code(traceback.format_exc())
-    st.stop()
-    
-from database import init_db, get_onboarding, get_stats_eleve
+from database import init_db, get_onboarding, get_stats_eleve, get_progression_cours
 from auth import page_auth, deconnecter
 from Exercices import page_exercices
 from cours import page_cours
@@ -37,32 +10,22 @@ from onboarding import page_onboarding
 from enseignant import page_connexion_enseignant, page_enseignant
 from cours_data import COURS
 
- 
 # ── Configuration ─────────────────────────────────────────────────
+# UNE SEULE FOIS — c'était le bug : deux st.set_page_config
 st.set_page_config(
     page_title="Tuteur Pro — Programmation",
     page_icon="🤖",
     layout="wide"
 )
 
-# ── Configuration ─────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Tuteur Pro — Programmation",
-    page_icon="🤖",
-    layout="wide"
-)
-
-st.write("--- DÉBUT LOGIQUE APP ---")
 inject_css()
 init_db()
 
 # ── Espace enseignant ─────────────────────────────────────────────
-# Accessible via ?mode=enseignant dans l'URL ou bouton dédié
 if "enseignant" in st.session_state:
     page_enseignant()
     st.stop()
 
-# Bouton discret dans la sidebar pour accéder à l'espace enseignant
 with st.sidebar:
     if st.button("👨‍🏫 Espace enseignant", use_container_width=False):
         st.session_state["mode_enseignant"] = True
@@ -75,41 +38,24 @@ if st.session_state.get("mode_enseignant") and \
         st.session_state.pop("mode_enseignant", None)
         st.rerun()
     st.stop()
-       
+
 # ── Garde 1 : authentification ────────────────────────────────────
-# eleve n'existe pas encore ici — on vérifie d'abord la session
 if "eleve" not in st.session_state:
     page_auth()
     st.stop()
 
-st.write("✅ élève connecté :", st.session_state["eleve"])
-
-#st.write("Email session :", eleve.get("email", "NON TROUVÉ"))
-#st.write("Email admin secrets :", st.secrets.get("ADMIN_EMAIL", "NON DÉFINI"))
-# eleve est maintenant défini — toutes les lignes suivantes peuvent l'utiliser
 eleve    = st.session_state["eleve"]
 eleve_id = eleve["id"]
 
-st.write("✅ eleve_id :", eleve_id)
-
-
 # ── Garde 2 : onboarding ──────────────────────────────────────────
-# On utilise eleve_id défini juste au-dessus
 onboarding_data = get_onboarding(eleve_id)
-
-st.write("✅ onboarding_data :", onboarding_data)
-
 onboarding_fait = (
     onboarding_data and onboarding_data.get("onboarding_fait")
 ) or st.session_state.get("onboarding_fait", False)
 
-st.write("✅ onboarding_fait :", onboarding_fait)
-
 if not onboarding_fait:
     page_onboarding()
     st.stop()
-    
-st.write("✅ ARRIVÉ À LA SIDEBAR")
 
 # ── Sidebar ───────────────────────────────────────────────────────
 st.sidebar.title("📚 Tuteur Pro")
@@ -121,8 +67,10 @@ if "page" not in st.session_state:
 
 page = st.sidebar.radio(
     "Navigation",
-    ["🏠 Accueil", "📖 Cours", "🧠 Exercices", "💬 Assistant", "📊 Ma progression"],
-    index=["🏠 Accueil", "📖 Cours", "🧠 Exercices", "💬 Assistant", "📊 Ma progression"]
+    ["🏠 Accueil", "📖 Cours", "🧠 Exercices",
+     "💬 Assistant", "📊 Ma progression"],
+    index=["🏠 Accueil", "📖 Cours", "🧠 Exercices",
+           "💬 Assistant", "📊 Ma progression"]
           .index(st.session_state["page"])
 )
 st.session_state["page"] = page
@@ -131,211 +79,168 @@ st.sidebar.divider()
 if st.sidebar.button("🚪 Se déconnecter", use_container_width=True):
     deconnecter()
 
+# ── Admin sidebar ─────────────────────────────────────────────────
+if not st.session_state.get("admin_auth", False):
+    with st.sidebar.expander("🔐 Admin"):
+        mdp = st.text_input(
+            "Mot de passe :",
+            type="password",
+            key="mdp_sidebar_admin"
+        )
+        if st.button("Valider", key="btn_sidebar_admin"):
+            if mdp == st.secrets.get("ADMIN_PASSWORD", ""):
+                st.session_state["admin_auth"] = True
+                st.success("Mode admin activé ✅")
+                st.rerun()
+            else:
+                st.error("Incorrect.")
+else:
+    st.sidebar.markdown(
+        "<span style='font-size:12px;color:#38A169'>✅ Mode admin actif</span>",
+        unsafe_allow_html=True
+    )
+    if st.sidebar.button("🚪 Quitter admin", use_container_width=True):
+        st.session_state["admin_auth"] = False
+        st.rerun()
+
 # ── Routeur ───────────────────────────────────────────────────────
 if page == "🏠 Accueil":
     st.title(f"Bienvenue {eleve['prenom']} 🤖")
     st.markdown("Améliore tes performances en informatique · 1ère TI")
     st.divider()
 
-    # ===== Récupération des stats RÉELLES des cours =====
-    from database import get_progression_cours, get_niveau_detecte
-    
-    # Initialiser les compteurs
-    total_chapitres = 0
-    chapitres_vus = 0
-    quiz_reussis = 0
-    progression_par_matiere = {}
-    
-    # Parcourir toutes les matières pour calculer les vraies stats
+    # Stats des cours
+    total_chapitres      = 0
+    chapitres_vus        = 0
+    quiz_reussis         = 0
+    progression_par_mat  = {}
+
     for theme, data in COURS.items():
-        total_chapitres_matiere = len(data["chapitres"])
-        total_chapitres += total_chapitres_matiere
-        
-        # Récupérer la progression RÉELLE depuis la base de données
-        progression = get_progression_cours(eleve_id, theme)
-        
-        # Compter les chapitres vus (cours_vu = True)
-        vus = sum(1 for p in progression if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
+        total_mat = len(data["chapitres"])
+        total_chapitres += total_mat
+        prog = get_progression_cours(eleve_id, theme)
+        vus  = sum(1 for p in prog
+                   if p.get("cours_vu") and p["chapitre"] != "__diagnostic__")
+        quiz = sum(1 for p in prog if p.get("quiz_reussi"))
         chapitres_vus += vus
-        
-        # Compter les quiz réussis
-        quiz_ok = sum(1 for p in progression if p.get("quiz_reussi"))
-        quiz_reussis += quiz_ok
-        
-        # Calculer le pourcentage pour cette matière
-        if total_chapitres_matiere > 0:
-            pct = round((vus / total_chapitres_matiere) * 100)
-        else:
-            pct = 0
-            
-        progression_par_matiere[theme] = {
-            "vus": vus,
-            "total": total_chapitres_matiere,
-            "pct": pct,
-            "quiz": quiz_ok,
+        quiz_reussis  += quiz
+        pct = round(vus / total_mat * 100) if total_mat > 0 else 0
+        progression_par_mat[theme] = {
+            "vus": vus, "total": total_mat,
+            "pct": pct, "quiz": quiz,
             "icone": data["icone"]
         }
-    
-    # Calculer la progression globale
-    if total_chapitres > 0:
-        progression_globale = round((chapitres_vus / total_chapitres) * 100)
-    else:
-        progression_globale = 0
-    
-    # Récupérer les stats des exercices (existantes)
-    from database import get_stats_eleve
+
+    prog_globale    = round(chapitres_vus / total_chapitres * 100) \
+                      if total_chapitres > 0 else 0
     stats_exercices = get_stats_eleve(eleve_id)
-    
-    # AFFICHAGE DES STATS RÉELLES
+
+    # Métriques
     col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric(
-            "📚 Chapitres vus",
-            f"{chapitres_vus}/{total_chapitres}",
-            help=f"{progression_globale}% de progression dans les cours"
-        )
-    
-    with col2:
-        st.metric(
-            "✅ Quiz réussis",
-            f"{quiz_reussis}",
-            help="Nombre de quiz validés avec succès"
-        )
-    
-    with col3:
-        st.metric(
-            "📖 Progression cours",
-            f"{progression_globale}%",
-            help="Pourcentage des chapitres terminés"
-        )
-    
-    with col4:
-        if stats_exercices["total"] > 0:
-            st.metric(
-                "🎯 Exercices réussis",
-                f"{stats_exercices['taux']}%",
-                help=f"{stats_exercices['reussis']}/{stats_exercices['total']} exercices"
-            )
-        else:
-            st.metric("🎯 Exercices", "0%", help="Commence des exercices !")
-    
+    col1.metric("📚 Chapitres vus",    f"{chapitres_vus}/{total_chapitres}")
+    col2.metric("✅ Quiz réussis",      f"{quiz_reussis}")
+    col3.metric("📖 Progression cours", f"{prog_globale}%")
+    col4.metric(
+        "🎯 Exercices réussis",
+        f"{stats_exercices['taux']}%",
+        help=f"{stats_exercices['reussis']}/{stats_exercices['total']}"
+    )
+
     st.divider()
-    
-    # AFFICHAGE DÉTAILLÉ PAR MATIÈRE
     st.markdown("#### 📊 Progression par matière")
-    
-    for theme, stats in progression_par_matiere.items():
-        # Barre de progression
+
+    for theme, stats in progression_par_mat.items():
         st.markdown(
-            f"""
-            <div style='margin-bottom: 20px;'>
-                <div style='display: flex; justify-content: space-between; margin-bottom: 5px;'>
-                    <span style='font-weight: 600;'>{stats['icone']} {theme}</span>
-                    <span style='color: #1565C0;'>
-                        {stats['vus']}/{stats['total']} chapitres
-                    </span>
-                </div>
-                <div style='background: #E3F2FD; border-radius: 8px; height: 24px; overflow: hidden;'>
-                    <div style='background: #1565C0; width: {stats['pct']}%; height: 100%; 
-                                display: flex; align-items: center; justify-content: flex-end;
-                                padding-right: 8px; color: white; font-size: 12px; font-weight: 500;'>
-                        {stats['pct']}%
-                    </div>
-                </div>
+            f"""<div style='margin-bottom:16px'>
+            <div style='display:flex;justify-content:space-between;
+            margin-bottom:4px'>
+                <span style='font-weight:600'>{stats['icone']} {theme}</span>
+                <span style='color:#1565C0'>{stats['vus']}/{stats['total']} chapitres</span>
             </div>
-            """,
+            <div style='background:#E3F2FD;border-radius:8px;height:20px;overflow:hidden'>
+                <div style='background:#1565C0;width:{stats['pct']}%;height:100%;
+                display:flex;align-items:center;justify-content:flex-end;
+                padding-right:8px;color:white;font-size:11px'>
+                {stats['pct']}%</div>
+            </div></div>""",
             unsafe_allow_html=True
         )
-        
-        # Afficher les détails des chapitres de cette matière
-        with st.expander(f"📖 Détails des chapitres - {theme}"):
-            progression_detail = get_progression_cours(eleve_id, theme)
-            
-            # Créer un tableau des chapitres
-            chapitres_data = []
-            for chapitre in COURS[theme]["chapitres"]:
-                prog_chap = next(
-                    (p for p in progression_detail if p["chapitre"] == chapitre["titre"]),
+        with st.expander(f"📖 Détails — {theme}"):
+            prog_detail = get_progression_cours(eleve_id, theme)
+            rows = []
+            for chap in COURS[theme]["chapitres"]:
+                pc = next(
+                    (p for p in prog_detail if p["chapitre"] == chap["titre"]),
                     None
                 )
-                
-                statut_cours = "✅ Vu" if prog_chap and prog_chap.get("cours_vu") else "⭕ Non vu"
-                statut_quiz = "✅ Réussi" if prog_chap and prog_chap.get("quiz_reussi") else "⭕ Non fait"
-                
-                chapitres_data.append({
-                    "Chapitre": chapitre["titre"][:50],
-                    "Cours": statut_cours,
-                    "Quiz": statut_quiz
+                rows.append({
+                    "Chapitre": chap["titre"][:50],
+                    "Cours":    "✅ Vu"    if pc and pc.get("cours_vu")    else "⭕ Non vu",
+                    "Quiz":     "✅ Réussi" if pc and pc.get("quiz_reussi") else "⭕ Non fait"
                 })
-            
-            st.dataframe(chapitres_data, use_container_width=True, hide_index=True)
-    
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+
     st.divider()
-    
-    # RECOMMANDATIONS PERSONNALISÉES
     st.markdown("#### 💡 Recommandations")
-    
-    # Trouver la matière avec le plus de retard
-    matiere_retard = None
-    pct_min = 100
-    for theme, stats in progression_par_matiere.items():
-        if stats["pct"] < pct_min and stats["total"] > 0:
-            pct_min = stats["pct"]
-            matiere_retard = theme
-    
-    if matiere_retard and pct_min < 100:
+
+    # Matière avec le plus de retard
+    matiere_retard = min(
+        progression_par_mat.items(),
+        key=lambda x: x[1]["pct"]
+    )[0] if progression_par_mat else None
+
+    if matiere_retard and progression_par_mat[matiere_retard]["pct"] < 100:
         st.warning(
-            f"⚠️ Ta progression en **{matiere_retard}** est de {pct_min}%. "
-            f"Concentre-toi sur cette matière pour améliorer ton niveau !"
+            f"⚠️ Progression en **{matiere_retard}** : "
+            f"{progression_par_mat[matiere_retard]['pct']}% — "
+            f"Concentre-toi sur cette matière !"
         )
-    
-    # Trouver le prochain chapitre à faire
-    prochain_chapitre = None
+
+    # Prochain chapitre
+    prochain_chap  = None
     prochain_theme = None
     for theme, data in COURS.items():
-        progression = get_progression_cours(eleve_id, theme)
-        chapitres_vus_set = {p["chapitre"] for p in progression if p.get("cours_vu")}
-        
-        for chapitre in data["chapitres"]:
-            if chapitre["titre"] not in chapitres_vus_set:
-                prochain_chapitre = chapitre["titre"]
+        prog = get_progression_cours(eleve_id, theme)
+        vus_set = {p["chapitre"] for p in prog if p.get("cours_vu")}
+        for chap in data["chapitres"]:
+            if chap["titre"] not in vus_set:
+                prochain_chap  = chap["titre"]
                 prochain_theme = theme
                 break
-        if prochain_chapitre:
+        if prochain_chap:
             break
-    
-    if prochain_chapitre:
+
+    if prochain_chap:
         st.info(
-            f"💡 **Prochain objectif :** {progression_par_matiere[prochain_theme]['icone']} "
-            f"{prochain_theme} - Chapitre \"{prochain_chapitre}\""
+            f"💡 **Prochain objectif :** "
+            f"{progression_par_mat[prochain_theme]['icone']} "
+            f"{prochain_theme} — \"{prochain_chap}\""
         )
-    
-    # Si tout est terminé
+
     if chapitres_vus == total_chapitres and total_chapitres > 0:
-        st.success("🎉 Félicitations ! Tu as terminé tous les chapitres de toutes les matières !")
-    
+        st.success("🎉 Félicitations ! Tu as terminé tous les chapitres !")
+
     st.divider()
-    
-    # BOUTONS DE NAVIGATION
     st.markdown("#### 🚀 Par où commencer ?")
     c1, c2, c3 = st.columns(3)
-    
-    if c1.button("📖 Voir les cours", use_container_width=True):
+    if c1.button("📖 Voir les cours",      use_container_width=True):
         st.session_state["page"] = "📖 Cours"
         st.rerun()
-    
     if c2.button("🧠 Faire des exercices", use_container_width=True):
         st.session_state["page"] = "🧠 Exercices"
         st.rerun()
-    
-    if c3.button("💬 Poser une question", use_container_width=True):
+    if c3.button("💬 Poser une question",  use_container_width=True):
         st.session_state["page"] = "💬 Assistant"
         st.rerun()
 
-    # ⚠️ METTEZ LE BLOC DEBUG ICI (à l'intérieur du if, tout à la fin)
-    #with st.expander("🔍 Debug - Voir les données brutes"):
-       # st.write("Progression par matière:", progression_par_matiere)
-        #st.write("Total chapitres:", total_chapitres)
-        #st.write("Chapitres vus:", chapitres_vus)
-        #st.write("Quiz réussis:", quiz_reussis)
+elif page == "📖 Cours":
+    page_cours()
+
+elif page == "🧠 Exercices":
+    page_exercices()
+
+elif page == "💬 Assistant":
+    page_chat()
+
+elif page == "📊 Ma progression":
+    page_progression()
