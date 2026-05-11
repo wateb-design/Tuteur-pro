@@ -51,6 +51,8 @@ st.set_page_config(
     page_icon="🤖",
     layout="wide"
 )
+
+st.write("--- DÉBUT LOGIQUE APP ---")
 inject_css()
 init_db()
 
@@ -79,12 +81,16 @@ if st.session_state.get("mode_enseignant") and \
 if "eleve" not in st.session_state:
     page_auth()
     st.stop()
-eleve = st.session_state["eleve"]
+
+st.write("✅ élève connecté :", st.session_state["eleve"])
+
 #st.write("Email session :", eleve.get("email", "NON TROUVÉ"))
 #st.write("Email admin secrets :", st.secrets.get("ADMIN_EMAIL", "NON DÉFINI"))
 # eleve est maintenant défini — toutes les lignes suivantes peuvent l'utiliser
 eleve    = st.session_state["eleve"]
 eleve_id = eleve["id"]
+
+st.write("✅ eleve_id :", eleve_id)
 
 
 # ── Garde 2 : onboarding ──────────────────────────────────────────
