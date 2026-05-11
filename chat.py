@@ -1,6 +1,6 @@
 import streamlit as st
 from groq import Groq
-from cours import COURS
+from cours_data import COURS
 
 # ── Client Groq ───────────────────────────────────────────────────
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
