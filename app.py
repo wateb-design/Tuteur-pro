@@ -1,21 +1,14 @@
-# Tout en haut de app.py
-# Tout en haut de app.py - AVANT toute autre ligne
-import sys
-import traceback
-
-# Bloc de debug pour vérifier l'import
-try:
-    from cours_data import COURS, NIVEAUX
-    print(f"[DEBUG] Import réussi - Matières: {list(COURS.keys())}", file=sys.stderr)
-    print(f"[DEBUG] Niveaux: {NIVEAUX}", file=sys.stderr)
-    sys.stderr.flush()
-except Exception as e:
-    print(f"[DEBUG] ERREUR d'import: {e}", file=sys.stderr)
-    traceback.print_exc(file=sys.stderr)
-    sys.stderr.flush()
-    # On continue quand même pour voir l'erreur
-
-# Ensuite votre code normal continue
+import streamlit as st
+from database import init_db, get_onboarding, get_stats_eleve
+from auth import page_auth, deconnecter
+from Exercices import page_exercices
+from cours import page_cours
+from progression import page_progression
+from chat import page_chat
+from style import inject_css
+from onboarding import page_onboarding
+from enseignant import page_connexion_enseignant, page_enseignant
+from cours_data import COURS
 
 import streamlit as st
 from database import init_db, get_onboarding, get_stats_eleve
@@ -28,6 +21,18 @@ from style import inject_css
 from onboarding import page_onboarding
 from enseignant import page_connexion_enseignant, page_enseignant
 from cours_data import COURS
+
+# ⚠️ AJOUTEZ CES 3 LIGNES ICI ⚠️
+import sys
+print(f"[DEBUG] app.py chargé - COURS disponible: {len(COURS)} matières", file=sys.stderr)
+sys.stderr.flush()
+
+# ── Configuration ─────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Tuteur Pro — Programmation",
+    page_icon="🤖",
+    layout="wide"
+)
 
 # ── Configuration ─────────────────────────────────────────────────
 st.set_page_config(
@@ -63,8 +68,6 @@ if st.session_state.get("mode_enseignant") and \
 if "eleve" not in st.session_state:
     page_auth()
     st.stop()
-
-
 eleve = st.session_state["eleve"]
 #st.write("Email session :", eleve.get("email", "NON TROUVÉ"))
 #st.write("Email admin secrets :", st.secrets.get("ADMIN_EMAIL", "NON DÉFINI"))
@@ -307,8 +310,8 @@ if page == "🏠 Accueil":
         st.rerun()
 
     # ⚠️ METTEZ LE BLOC DEBUG ICI (à l'intérieur du if, tout à la fin)
-    with st.expander("🔍 Debug - Voir les données brutes"):
-        st.write("Progression par matière:", progression_par_matiere)
-        st.write("Total chapitres:", total_chapitres)
-        st.write("Chapitres vus:", chapitres_vus)
-        st.write("Quiz réussis:", quiz_reussis)
+    #with st.expander("🔍 Debug - Voir les données brutes"):
+       # st.write("Progression par matière:", progression_par_matiere)
+        #st.write("Total chapitres:", total_chapitres)
+        #st.write("Chapitres vus:", chapitres_vus)
+        #st.write("Quiz réussis:", quiz_reussis)
