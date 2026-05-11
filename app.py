@@ -285,3 +285,10 @@ if page == "🏠 Accueil":
     if c3.button("💬 Poser une question", use_container_width=True):
         st.session_state["page"] = "💬 Assistant"
         st.rerun()
+
+    # Ajoutez ceci juste après avoir récupéré les stats
+with st.expander("🔍 Debug - Voir les données brutes"):
+    st.write("Progression par matière:", progression_par_matiere)
+    st.write("Total chapitres:", total_chapitres)
+    st.write("Chapitres vus:", chapitres_vus)
+    st.write("Quiz réussis:", quiz_reussis)
