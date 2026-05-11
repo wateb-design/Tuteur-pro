@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import json as _json
 
+from cours_data import COURS, NIVEAUX
+
 # ── Helpers REST Supabase ─────────────────────────────────────────
 # On appelle l'API REST Supabase directement avec requests.
 # Plus fiable que le client officiel sur Python 3.14.
