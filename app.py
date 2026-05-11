@@ -96,13 +96,20 @@ st.write("✅ eleve_id :", eleve_id)
 # ── Garde 2 : onboarding ──────────────────────────────────────────
 # On utilise eleve_id défini juste au-dessus
 onboarding_data = get_onboarding(eleve_id)
+
+st.write("✅ onboarding_data :", onboarding_data)
+
 onboarding_fait = (
     onboarding_data and onboarding_data.get("onboarding_fait")
 ) or st.session_state.get("onboarding_fait", False)
 
+st.write("✅ onboarding_fait :", onboarding_fait)
+
 if not onboarding_fait:
     page_onboarding()
     st.stop()
+    
+st.write("✅ ARRIVÉ À LA SIDEBAR")
 
 # ── Sidebar ───────────────────────────────────────────────────────
 st.sidebar.title("📚 Tuteur Pro")
