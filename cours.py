@@ -16,6 +16,7 @@ from database import (
     get_diagnostic_questions,
     sauvegarder_diagnostic_questions
 )
+
 from cours_data import COURS, NIVEAUX
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
