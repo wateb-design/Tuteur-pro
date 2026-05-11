@@ -104,10 +104,6 @@ REGLES — JavaScript :
 - Exemples concrets camerounais"""
 }
 
-
-NIVEAUX = ["Débutant", "Intermédiaire", "Avancé"]
-
-
 # ── Génération contenu APC ────────────────────────────────────────
 # ── Génération contenu APC avec cache BDD ────────────────────────
 # Logique : BDD d'abord → Groq si absent → sauvegarde BDD
