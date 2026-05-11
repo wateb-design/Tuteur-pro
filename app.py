@@ -1,7 +1,21 @@
 # Tout en haut de app.py
+# Tout en haut de app.py - AVANT toute autre ligne
 import sys
-print("=== DÉMARRAGE DE APP.PY ===", file=sys.stderr)
-sys.stderr.flush()
+import traceback
+
+# Bloc de debug pour vérifier l'import
+try:
+    from cours_data import COURS, NIVEAUX
+    print(f"[DEBUG] Import réussi - Matières: {list(COURS.keys())}", file=sys.stderr)
+    print(f"[DEBUG] Niveaux: {NIVEAUX}", file=sys.stderr)
+    sys.stderr.flush()
+except Exception as e:
+    print(f"[DEBUG] ERREUR d'import: {e}", file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+    sys.stderr.flush()
+    # On continue quand même pour voir l'erreur
+
+# Ensuite votre code normal continue
 
 import streamlit as st
 from database import init_db, get_onboarding, get_stats_eleve
