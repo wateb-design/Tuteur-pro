@@ -1,3 +1,7 @@
+import sys
+print("[DEBUG] Chargement de cours.py", file=sys.stderr)
+sys.stderr.flush()
+
 import streamlit as st
 from groq import Groq
 import json
@@ -428,6 +432,9 @@ def afficher_progression(progression, total_chapitres):
 
 # ── Page principale ───────────────────────────────────────────────
 def page_cours():
+    print("[DEBUG] Entrée dans page_cours()", file=sys.stderr)
+    sys.stderr.flush()
+    
     # Au début de chaque fonction page_xxx()
     st.write("Debug: Début du chargement de la page")
     st.write("COURS importé:", 'COURS' in dir())
