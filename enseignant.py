@@ -13,7 +13,7 @@ from database import (
     get_progression_complete_eleve,
     get_resultats_eleve
 )
-from cours import COURS
+from cours_data import COURS
 
 # ── Hashage mot de passe ──────────────────────────────────────────
 def hash_password(password):
