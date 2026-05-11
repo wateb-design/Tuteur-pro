@@ -289,7 +289,7 @@ if page == "🏠 Accueil":
 
     # Ajoutez ceci juste après avoir récupéré les stats
     with st.expander("🔍 Debug - Voir les données brutes"):
-    st.write("Progression par matière:", progression_par_matiere)
-    st.write("Total chapitres:", total_chapitres)
-    st.write("Chapitres vus:", chapitres_vus)
-    st.write("Quiz réussis:", quiz_reussis)
+        st.write("Progression par matière:", progression_par_matiere)
+        st.write("Total chapitres:", total_chapitres)
+        st.write("Chapitres vus:", chapitres_vus)
+        st.write("Quiz réussis:", quiz_reussis)
