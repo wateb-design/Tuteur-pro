@@ -1,3 +1,8 @@
+# Tout en haut de app.py
+import sys
+print("=== DÉMARRAGE DE APP.PY ===", file=sys.stderr)
+sys.stderr.flush()
+
 import streamlit as st
 from database import init_db, get_onboarding, get_stats_eleve
 from auth import page_auth, deconnecter
