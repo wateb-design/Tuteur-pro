@@ -91,7 +91,8 @@ if page == "🏠 Accueil":
     st.divider()
 
     # ===== NOUVEAU : Récupération des stats RÉELLES des cours =====
-    from database import get_progression_cours, get_niveau_detecte, COURS
+    from database import get_progression_cours, get_niveau_detecte
+    from cours_data import COURS  # Import direct depuis cours_data
     
     # Initialiser les compteurs
     total_chapitres = 0
